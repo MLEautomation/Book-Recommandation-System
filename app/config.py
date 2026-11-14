@@ -3,6 +3,7 @@ import os
 try:
     from dotenv import load_dotenv
 except ImportError:
+
     def load_dotenv(path):
         if not os.path.exists(path):
             return
@@ -13,6 +14,7 @@ except ImportError:
                     continue
                 key, value = line.split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
@@ -27,5 +29,6 @@ class Config:
     PAGE_SIZE = 24
     COMMENT_PAGE_SIZE = 20
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
-    COVER_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "static", "covers")
-
+    COVER_DIR = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "app", "static", "covers"
+    )

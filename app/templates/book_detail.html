@@ -1,1 +1,18 @@
-{% extends 'base.html' %}{% block content %}<div id="book" data-id="{{ book_id }}">加载中…</div><section class="panel"><div class="section-head"><h2>评论</h2><div><button class="btn btn-outline" data-sort="hot">按热度</button><button class="btn btn-outline" data-sort="time">按时间</button></div></div><div id="commentForm"></div><div id="comments">加载中…</div></section>{% endblock %}{% block scripts %}<script>window.BRS.page='book';</script>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<div id="book" data-id="{{ book_id }}">加载中…</div>
+<section class="panel">
+  <div class="section-head">
+    <h2>评论</h2>
+    <div>
+      <button class="btn btn-outline" data-sort="hot">按热度</button
+      ><button class="btn btn-outline" data-sort="time">按时间</button>
+    </div>
+  </div>
+  <div id="commentForm"></div>
+  <div id="comments">加载中…</div>
+</section>
+{% endblock %}{% block scripts %}
+<script>
+  window.BRS.page = "book";
+</script>
+{% endblock %}

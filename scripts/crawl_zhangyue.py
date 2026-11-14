@@ -14,8 +14,10 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-
+from playwright.async_api import (
+    async_playwright,
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 DEFAULT_URL = "https://se.zhangyue.com/category/index?appId=5f72666e"
 BOOK_LINK_RE = re.compile(r"/book/detail(?:\?|$)")
@@ -47,13 +49,18 @@ async def find_cover_url(page_or_anchor, base_url):
         width: img.naturalWidth || img.width || 0,
         height: img.naturalHeight || img.height || 0
     }))""")
-    candidates = [item for item in candidates if item["src"] and "modal_logo" not in item["src"]]
-    candidates.sort(key=lambda item: (
-        "bookbk.img.zhangyue01.com" in item["src"],
-        "idc_1/m_1,w_300,h_400" in item["src"],
-        item["height"] >= item["width"] * 1.05,
-        item["width"] * item["height"],
-    ), reverse=True)
+    candidates = [
+        item for item in candidates if item["src"] and "modal_logo" not in item["src"]
+    ]
+    candidates.sort(
+        key=lambda item: (
+            "bookbk.img.zhangyue01.com" in item["src"],
+            "idc_1/m_1,w_300,h_400" in item["src"],
+            item["height"] >= item["width"] * 1.05,
+            item["width"] * item["height"],
+        ),
+        reverse=True,
+    )
     if not candidates:
         return None
     return urljoin(base_url, candidates[0]["src"])
@@ -131,12 +138,16 @@ async def read_detail(context, record):
         body = await page.locator("body").inner_text()
         title_locator = page.locator("h1, .book-title, .bookName").first
         if await title_locator.count():
-            record["title"] = clean_text(await title_locator.inner_text()) or record["title"]
+            record["title"] = (
+                clean_text(await title_locator.inner_text()) or record["title"]
+            )
         author_match = re.search(r"作者\s*[：:]\s*([^\n]+)", body)
         publisher_match = re.search(r"出版社\s*[：:]\s*([^\n]+)", body)
         isbn_match = re.search(r"ISBN\s*[：:]\s*([0-9Xx-]+)", body)
         year_match = re.search(r"上架时间\s*[：:]\s*(\d{4})[-年]", body)
-        intro_match = re.search(r"【简介】\s*(.+?)(?:\s+随感|\s+图书更多信息|$)", body, re.S)
+        intro_match = re.search(
+            r"【简介】\s*(.+?)(?:\s+随感|\s+图书更多信息|$)", body, re.S
+        )
         if author_match:
             record["author"] = clean_text(author_match.group(1))
         if publisher_match:
@@ -159,7 +170,12 @@ async def crawl(args):
     async with async_playwright() as playwright:
         executable = os.getenv("BRS_CHROMIUM_EXECUTABLE")
         if not executable:
-            candidates = sorted(Path.home().glob("AppData/Local/ms-playwright/chromium-*/chrome-win64/chrome.exe"), reverse=True)
+            candidates = sorted(
+                Path.home().glob(
+                    "AppData/Local/ms-playwright/chromium-*/chrome-win64/chrome.exe"
+                ),
+                reverse=True,
+            )
             executable = str(candidates[0]) if candidates else None
         launch_options = {"headless": not args.headful}
         if executable:
@@ -176,10 +192,14 @@ async def crawl(args):
                 category_targets = [{"name": "全部分类", "url": args.url}]
         records_by_id = {}
         for category in category_targets:
-            await page.goto(category["url"], wait_until="domcontentloaded", timeout=30000)
+            await page.goto(
+                category["url"], wait_until="domcontentloaded", timeout=30000
+            )
             await page.wait_for_timeout(700)
             remaining = args.max_books - len(records_by_id)
-            for record in await collect_category_links(page, min(args.per_category, remaining)):
+            for record in await collect_category_links(
+                page, min(args.per_category, remaining)
+            ):
                 record["category"] = category["name"]
                 records_by_id.setdefault(record["source_book_id"], record)
                 if len(records_by_id) >= args.max_books:
@@ -189,7 +209,7 @@ async def crawl(args):
         records = list(records_by_id.values())
         if args.details:
             for start in range(0, len(records), args.detail_batch):
-                batch = records[start:start + args.detail_batch]
+                batch = records[start : start + args.detail_batch]
                 await asyncio.gather(*(read_detail(context, item) for item in batch))
                 await asyncio.sleep(args.delay)
         await browser.close()
@@ -202,7 +222,9 @@ async def crawl(args):
     }
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    output.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"saved {len(records)} books to {output}")
 
 
@@ -211,13 +233,21 @@ def main():
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--output", default="data/import/zhangyue_books.json")
     parser.add_argument("--max-books", type=int, default=200)
-    parser.add_argument("--per-category", type=int, default=5, help="每个一级分类最多采集多少本")
-    parser.add_argument("--all-categories", action="store_true", help="遍历首页发现的一级分类")
+    parser.add_argument(
+        "--per-category", type=int, default=5, help="每个一级分类最多采集多少本"
+    )
+    parser.add_argument(
+        "--all-categories", action="store_true", help="遍历首页发现的一级分类"
+    )
     parser.add_argument("--max-categories", type=int, default=30)
-    parser.add_argument("--details", action="store_true", help="逐本访问详情页补充出版社、ISBN、简介")
+    parser.add_argument(
+        "--details", action="store_true", help="逐本访问详情页补充出版社、ISBN、简介"
+    )
     parser.add_argument("--detail-batch", type=int, default=3)
     parser.add_argument("--delay", type=float, default=1.0)
-    parser.add_argument("--headful", action="store_true", help="显示浏览器窗口，便于观察采集过程")
+    parser.add_argument(
+        "--headful", action="store_true", help="显示浏览器窗口，便于观察采集过程"
+    )
     args = parser.parse_args()
     asyncio.run(crawl(args))
 

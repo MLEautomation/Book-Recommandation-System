@@ -13,8 +13,12 @@ class Database:
         self.session = None
 
     def init_app(self, app: Flask):
-        self.engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"], pool_pre_ping=True)
-        self.session = scoped_session(sessionmaker(bind=self.engine, expire_on_commit=False))
+        self.engine = create_engine(
+            app.config["SQLALCHEMY_DATABASE_URI"], pool_pre_ping=True
+        )
+        self.session = scoped_session(
+            sessionmaker(bind=self.engine, expire_on_commit=False)
+        )
         app.teardown_appcontext(self.remove)
 
     def remove(self, _exception=None):
@@ -26,4 +30,3 @@ class Database:
 
 
 db = Database()
-

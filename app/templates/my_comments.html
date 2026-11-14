@@ -1,1 +1,20 @@
-{% extends 'base.html' %}{% block content %}<div class="page-head"><div><h1>我的评论</h1><div class="sub">管理自己发布的评论，点击内容可回到原书评论位置。</div></div></div><section class="panel"><div id="myComments">加载中…</div><div id="myCommentsPager"></div></section>{% endblock %}{% block scripts %}<script>window.BRS.page='my-comments';</script><script type="module" src="{{ url_for('static', filename='js/profile.js') }}"></script>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<div class="page-head">
+  <div>
+    <h1>我的评论</h1>
+    <div class="sub">管理自己发布的评论，点击内容可回到原书评论位置。</div>
+  </div>
+</div>
+<section class="panel">
+  <div id="myComments">加载中…</div>
+  <div id="myCommentsPager"></div>
+</section>
+{% endblock %}{% block scripts %}
+<script>
+  window.BRS.page = "my-comments";
+</script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/profile.js') }}"
+></script>
+{% endblock %}
