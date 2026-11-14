@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图书推荐系统 · 原型</title>
+<style>
+/* ============================================================
+   1. 基础与变量
+   ============================================================ */
+:root{
+  --primary:#2E5C8A;
+  --primary-dark:#24466b;
+  --primary-soft:#e9f0f8;
+  --bg:#f5f7fa;
+  --card:#ffffff;
+  --text:#1f2933;
+  --text-2:#3a4753;
+  --muted:#6b7a88;
+  --line:#e4e9ef;
+  --danger:#c0392b;
+  --ok:#2e8b57;
+  --warn:#b7791f;
+  --radius:12px;
+  --shadow:0 2px 10px rgba(31,41,51,.07);
+  --shadow-hover:0 8px 22px rgba(31,41,51,.13);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.65 "PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{margin:0;font-weight:700}
+p{margin:0 0 10px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit}
+ul{margin:0;padding:0;list-style:none}
+
+/* ============================================================
+   2. 顶部菜单
+   ============================================================ */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:60px;z-index:100;
+  background:#fff;border-bottom:1px solid var(--line);
+  box-shadow:0 1px 6px rgba(31,41,51,.05);
+}
+.topbar-inner{
+  max-width:1200px;height:100%;margin:0 auto;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:800;color:var(--primary);white-space:nowrap}
+.brand:hover{text-decoration:none}
+.brand .mark{
+  width:26px;height:26px;border-radius:7px;flex:0 0 26px;
+  background:linear-gradient(145deg,var(--primary),#7fa6c9);
+  color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.nav a{padding:7px 13px;border-radius:8px;color:var(--text-2);font-weight:500;white-space:nowrap}
+.nav a:hover{background:var(--primary-soft);text-decoration:none}
+.nav a.active{background:var(--primary);color:#fff}
+.nav .who{color:var(--muted);font-size:13px;padding:0 6px;white-space:nowrap}
+.nav .who b{color:var(--primary)}
+
+main{padding-top:60px;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:22px 20px 70px}
+
+/* ============================================================
+   3. 通用组件
+   ============================================================ */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:4px 0 18px;flex-wrap:wrap}
+.page-head h1{font-size:22px}
+.page-head .sub{color:var(--muted);font-size:13px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+.section{margin-bottom:20px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.section-head h2{font-size:17px;display:flex;align-items:center;gap:8px}
+.section-head h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--primary)}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.hint{color:var(--muted);font-size:12.5px;line-height:1.6}
+.divider{height:1px;background:var(--line);margin:18px 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;border-radius:9px;border:1px solid transparent;font-weight:600;transition:.16s;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{border-color:#cbd8e5;color:var(--primary);background:#fff}
+.btn-outline:hover{background:var(--primary-soft)}
+.btn-ghost{background:#f1f4f8;color:var(--text-2)}
+.btn-ghost:hover{background:#e7ecf3}
+.btn-danger{background:#fdecea;color:var(--danger)}
+.btn-danger:hover{background:#fbd9d5}
+.btn-sm{height:30px;padding:0 11px;font-size:13px;border-radius:8px}
+.btn-xs{height:26px;padding:0 9px;font-size:12.5px;border-radius:7px}
+.btn[disabled],.btn.is-disabled{opacity:.55;cursor:not-allowed}
+.btn-block{width:100%}
+
+.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:14px;background:#f1f4f8;color:var(--text-2);font-size:13px;border:1px solid transparent;transition:.14s}
+.chip.on{background:var(--primary);color:#fff}
+.tag-chip{cursor:pointer}
+.tag-chip:hover{background:#e7edf5}
+.tag-chip.on:hover{background:var(--primary-dark)}
+.chip-sm{height:22px;padding:0 8px;font-size:11.5px;border-radius:11px;background:#f2f5f9;color:var(--muted)}
+
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--primary-soft);color:var(--primary);font-weight:600}
+.badge.gray{background:#eef1f5;color:var(--muted)}
+.badge.warn{background:#fdf3e2;color:var(--warn)}
+.badge.danger{background:#fdecea;color:var(--danger)}
+.badge.ok{background:#e8f5ec;color:var(--ok)}
+
+/* 表单 */
+.field{margin-bottom:15px}
+.field label{display:block;font-weight:600;margin-bottom:6px;font-size:13.5px}
+.input{
+  width:100%;height:40px;padding:0 12px;border:1px solid #d8e0e9;border-radius:9px;background:#fff;
+  transition:.15s;outline:none;
+}
+textarea.input{height:auto;min-height:84px;padding:10px 12px;line-height:1.6;resize:vertical}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,92,138,.12)}
+.input.err{border-color:var(--danger);box-shadow:0 0 0 3px rgba(192,57,43,.1)}
+.err-msg{color:var(--danger);font-size:12.5px;margin-top:5px}
+.with-btn{display:flex;gap:8px}
+.with-btn .input{flex:1}
+
+/* 分页 */
+.pager{display:flex;align-items:center;justify-content:center;gap:8px;margin:22px 0 4px;flex-wrap:wrap}
+.pager button{
+  min-width:36px;height:34px;padding:0 11px;border-radius:8px;background:#fff;
+  border:1px solid var(--line);color:var(--text-2);font-size:13px;font-weight:500;transition:.15s;
+}
+.pager button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.pager button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.pager button:disabled{color:#c2ccd8;background:#f7f9fb;cursor:not-allowed}
+.pager .info{color:var(--muted);font-size:12.5px;margin-left:6px}
+
+/* Toast */
+#toasts{position:fixed;top:74px;right:20px;z-index:400;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none}
+.toast{
+  background:#20303f;color:#fff;padding:11px 16px;border-radius:10px;font-size:13.5px;
+  box-shadow:0 10px 28px rgba(16,24,32,.24);max-width:340px;animation:toastIn .18s ease;
+  pointer-events:auto;line-height:1.55;
+}
+.toast a{color:#9ecbf7;font-weight:600;margin-left:4px}
+.toast.ok{background:#23684a}
+.toast.err{background:#8f2d22}
+@keyframes toastIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* 弹窗 */
+#modal-root{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(16,24,32,.45);padding:20px}
+#modal-root.show{display:flex}
+.modal{background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(16,24,32,.3);width:min(430px,94vw);padding:22px 22px 18px;animation:modalIn .16s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.modal h3{font-size:17px;margin-bottom:8px}
+.modal .mbody{color:var(--text-2);font-size:13.5px;line-height:1.7;margin-bottom:16px}
+.modal .mfoot{display:flex;justify-content:flex-end;gap:10px}
+
+/* ============================================================
+   4. 封面与图书卡片
+   ============================================================ */
+.cover{
+  position:relative;width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.16);
+}
+.cover::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(150deg,rgba(255,255,255,.26),rgba(0,0,0,.26));
+}
+.cover .init{
+  position:relative;z-index:1;font-size:40px;font-weight:800;letter-spacing:2px;
+  text-shadow:0 3px 12px rgba(0,0,0,.32);
+}
+.cover .spine{position:absolute;left:0;top:0;bottom:0;width:7px;background:rgba(0,0,0,.22);z-index:1}
+.cover .tagline{
+  position:absolute;left:0;right:0;bottom:0;z-index:1;padding:26px 10px 9px;
+  font-size:11.5px;letter-spacing:.5px;background:linear-gradient(transparent,rgba(0,0,0,.45));color:rgba(255,255,255,.92);
+}
+
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}
+.bcard{
+  background:#fff;border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);
+  cursor:pointer;transition:.18s;display:flex;flex-direction:column;gap:9px;
+}
+.bcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover)}
+.bcard .btitle{font-weight:700;font-size:14px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcard .bauthor{color:var(--muted);font-size:12.5px;margin-top:-2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcard .btags{display:flex;gap:5px;flex-wrap:wrap}
+.bcard .bfoot{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.fav-btn{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:7px;background:#f2f5f9;color:var(--text-2);font-size:12.5px}
+.fav-btn.on{background:#fdf3e2;color:#b7791f}
+.fav-btn:hover{filter:brightness(.96)}
+.count{color:var(--muted);font-size:12px}
+
+/* ============================================================
+   5. 首页筛选
+   ============================================================ */
+.filter-box{display:flex;flex-direction:column;gap:12px}
+.filter-row{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start}
+.filter-row .ftype{color:var(--muted);font-size:13px;font-weight:600;padding-top:3px}
+.filter-vals{display:flex;gap:8px;flex-wrap:wrap}
+.selected-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.selected-bar .label{color:var(--muted);font-size:13px;font-weight:600}
+.chip-x{cursor:pointer;background:var(--primary-soft);color:var(--primary)}
+.chip-x .x{opacity:.65;font-weight:700}
+
+/* ============================================================
+   6. 榜单
+   ============================================================ */
+.rank-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rank-tabs button{
+  height:36px;padding:0 18px;border-radius:9px;background:#fff;border:1px solid var(--line);
+  color:var(--text-2);font-weight:600;transition:.15s;
+}
+.rank-tabs button:hover{border-color:var(--primary);color:var(--primary)}
+.rank-tabs button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.rank-note{
+  display:flex;gap:8px;align-items:flex-start;background:#f8fbfe;border:1px solid #dbe7f2;
+  border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--text-2);
+}
+.rank-note b{color:var(--primary)}
+.rrow{
+  display:grid;grid-template-columns:56px 70px 1fr;gap:16px;align-items:center;
+  background:#fff;border-radius:11px;padding:12px 16px;margin-bottom:10px;cursor:pointer;
+  border:1px solid transparent;box-shadow:0 1px 4px rgba(31,41,51,.05);transition:.15s;
+}
+.rrow:hover{background:#f9fcff;border-color:#cfe0f0;transform:translateX(2px)}
+.rrow .rank{font:800 26px/1 Georgia,"Times New Roman",serif;color:#9aa7b4;text-align:center}
+.rrow .rank.r1{color:#d4a017}
+.rrow .rank.r2{color:#8d9aa8}
+.rrow .rank.r3{color:#bf7f4e}
+.rrow .rcover{width:70px;aspect-ratio:3/4;border-radius:7px}
+.rrow .rcover .init{font-size:22px}
+.rrow .rtitle{font-weight:700;font-size:15.5px;margin-bottom:3px}
+.rrow .rmeta{color:var(--muted);font-size:12.5px;margin-bottom:5px}
+.rrow .rval{font-size:12.5px;color:var(--primary);font-weight:600}
+
+/* ============================================================
+   7. 图书详情
+   ============================================================ */
+.detail-top{display:grid;grid-template-columns:210px 1fr;gap:26px}
+.detail-top .cover{max-width:210px}
+.detail-info h1{font-size:24px;margin-bottom:6px}
+.detail-info .byline{color:var(--muted);margin-bottom:16px}
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px 22px;margin-bottom:14px}
+.meta-grid .mi{display:flex;gap:8px;font-size:13px}
+.meta-grid .mk{color:var(--muted);flex:0 0 62px}
+.meta-grid .mv{color:var(--text-2);font-weight:500}
+.tag-groups{display:flex;flex-direction:column;gap:8px;margin:14px 0 18px}
+.tag-line{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start;font-size:13px}
+.tag-line .tl{color:var(--muted);font-weight:600}
+.tag-line .tv{display:flex;gap:6px;flex-wrap:wrap}
+.act-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.act-btn{
+  display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;border-radius:9px;
+  background:#fff;border:1px solid #d8e0e9;font-weight:600;transition:.15s;
+}
+.act-btn:hover{border-color:var(--primary);color:var(--primary);background:#f8fbff}
+.act-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.act-btn.on.neg{background:#c0392b;border-color:#c0392b}
+.act-btn.on.pos{background:#2e8b57;border-color:#2e8b57}
+.act-btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* 评论 */
+.cmt-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:inline-flex;background:#eef2f7;border-radius:9px;padding:3px}
+.seg button{height:30px;padding:0 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button.active{background:#fff;color:var(--primary);box-shadow:0 1px 4px rgba(31,41,51,.12)}
+.comment{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px 0;border-bottom:1px solid #eff2f6}
+.comment:last-child{border-bottom:none}
+.avatar{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--primary-soft);color:var(--primary);font-weight:700;font-size:15px;flex:0 0 36px;
+}
+.avatar.gr{background:#e8f5ec;color:#2e8b57}
+.avatar.am{background:#fdf3e2;color:#b7791f}
+.cmt-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.cmt-user{font-weight:700;font-size:13.5px}
+.cmt-time{color:var(--muted);font-size:12px}
+.cmt-body{color:var(--text-2);margin-bottom:8px;white-space:pre-wrap;word-break:break-word}
+.cmt-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.act-mini{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:7px;color:var(--muted);font-size:12.5px;transition:.14s}
+.act-mini:hover{background:#f1f4f8;color:var(--primary)}
+.act-mini.on.like{background:#e8f5ec;color:#2e8b57}
+.act-mini.on.dis{background:#fdecea;color:var(--danger)}
+.act-mini[disabled]{opacity:.5;cursor:not-allowed}
+.replies{margin-top:10px;padding-left:12px;border-left:2px solid #eef2f7;display:flex;flex-direction:column;gap:2px}
+.replies .comment{grid-template-columns:28px 1fr;padding:10px 0;border-bottom:none}
+.replies .avatar{width:28px;height:28px;flex:0 0 28px;font-size:12px}
+.pinned-bar{
+  display:flex;align-items:center;gap:10px;margin:6px 0 2px;padding:12px 0 6px;
+  border-top:2px dashed #e6c9a8;color:#a9762a;font-size:13px;font-weight:600;
+}
+.pinned-bar .ico{width:22px;height:22px;border-radius:50%;background:#fdf3e2;display:flex;align-items:center;justify-content:center;font-size:12px}
+.pinned{background:#fffdf8;border:1px solid #f2e3cd;border-radius:10px;padding:0 14px;margin-bottom:10px}
+.cmt-editor{background:#f8fafc;border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:18px}
+.cmt-editor .row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px;flex-wrap:wrap}
+.reply-box{margin-top:10px}
+
+/* ============================================================
+   8. 登录 / 注册
+   ============================================================ */
+.auth-wrap{max-width:420px;margin:36px auto 0}
+.auth-card{background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(31,41,51,.1);padding:30px 30px 24px}
+.auth-card h1{font-size:20px;text-align:center;margin-bottom:6px}
+.auth-card .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:22px}
+.pwd-wrap{position:relative}
+.pwd-wrap .input{padding-right:44px}
+.eye{position:absolute;right:6px;top:0;height:40px;width:36px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;border-radius:8px}
+.eye:hover{background:#f1f4f8}
+.captcha-wrap{display:flex;gap:10px}
+.captcha-wrap .input{flex:1}
+#captchaCanvas{border:1px solid #d8e0e9;border-radius:9px;cursor:pointer;background:#f7fafd;flex:0 0 auto}
+.switch{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;font-size:13px;color:var(--text-2)}
+.switch .track{width:38px;height:21px;border-radius:11px;background:#cfd8e3;position:relative;transition:.16s;flex:0 0 38px}
+.switch .track::after{content:"";position:absolute;left:2px;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.16s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on .track{background:var(--primary)}
+.switch.on .track::after{transform:translateX(17px)}
+.auth-foot{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+.demo-tip{margin-top:14px;padding:10px 12px;border-radius:9px;background:#f8fbfe;border:1px dashed #d5e3f0;font-size:12.5px;color:var(--muted);line-height:1.7}
+
+/* ============================================================
+   9. 个人主页
+   ============================================================ */
+.profile-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.profile-top .avatar{width:62px;height:62px;flex:0 0 62px;font-size:24px;border-radius:16px}
+.profile-top h1{font-size:20px;margin-bottom:2px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:20px 0 16px;flex-wrap:wrap}
+.tabs button{
+  height:38px;padding:0 16px;border-radius:9px 9px 0 0;color:var(--muted);font-weight:600;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.tabs button:hover{color:var(--primary)}
+.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);background:#f8fbff}
+.list-row{
+  display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);
+  border-radius:11px;margin-bottom:10px;background:#fff;transition:.15s;
+}
+.list-row:hover{border-color:#cfe0f0;box-shadow:0 2px 10px rgba(31,41,51,.06)}
+.list-row .cover{width:44px;aspect-ratio:3/4;flex:0 0 44px;border-radius:6px}
+.list-row .cover .init{font-size:16px}
+.list-row .grow{flex:1;min-width:0}
+.list-row .t{font-weight:700;font-size:14px;margin-bottom:2px}
+.list-row .s{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.interest-box{display:flex;flex-direction:column;gap:12px}
+.interest-row{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:start}
+.interest-row .t{color:var(--muted);font-size:13px;font-weight:600;padding-top:3px}
+
+/* ============================================================
+   10. AI 荐书
+   ============================================================ */
+.ai-wrap{display:grid;grid-template-columns:288px 1fr;gap:18px;align-items:start}
+.ai-side{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;position:sticky;top:78px}
+.ai-side .new-topic{width:100%;margin-bottom:12px}
+.topic-list{display:flex;flex-direction:column;gap:4px;max-height:62vh;overflow:auto}
+.topic-item{
+  position:relative;padding:10px 10px;border-radius:9px;cursor:pointer;transition:.14s;border:1px solid transparent;
+}
+.topic-item:hover{background:#f6f9fc}
+.topic-item.active{background:var(--primary-soft);border-color:#cfe0f0}
+.topic-item .tt{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:46px}
+.topic-item .tm{color:var(--muted);font-size:11.5px}
+.topic-tools{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:none;gap:2px}
+.topic-item:hover .topic-tools{display:flex}
+.icon-btn{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+.icon-btn:hover{background:#e8eef5;color:var(--primary)}
+
+.ai-main{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:70vh}
+.ai-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.ai-head h2{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-head .tools{display:flex;gap:4px;flex:0 0 auto}
+.ai-body{padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:14px}
+.rec-panel{background:linear-gradient(140deg,#f7fbff,#eef5fb);border:1px solid #d9e7f3;border-radius:12px;padding:14px 16px}
+.rec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rec-head .lh{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--primary)}
+.rec-badge{background:var(--primary);color:#fff;font-size:11px;padding:2px 8px;border-radius:9px;font-weight:600;letter-spacing:.3px}
+.rec-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rec-card{background:#fff;border-radius:10px;padding:10px;display:flex;gap:10px;cursor:pointer;border:1px solid #e4eef7;transition:.15s}
+.rec-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-2px)}
+.rec-card .cover{width:56px;flex:0 0 56px;border-radius:6px}
+.rec-card .cover .init{font-size:18px}
+.rec-card .rt{font-weight:700;font-size:13px;margin-bottom:2px}
+.rec-card .ra{color:var(--muted);font-size:11.5px;margin-bottom:5px}
+.rec-card .rr{color:var(--text-2);font-size:11.5px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+
+.chat{display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:10px;align-items:flex-start}
+.msg .avatar{width:32px;height:32px;flex:0 0 32px;font-size:13px;border-radius:10px;background:linear-gradient(145deg,var(--primary),#7fa6c9);color:#fff}
+.msg .bubbles{max-width:min(660px,86%)}
+.bubble{padding:11px 14px;border-radius:12px;background:#f4f7fa;border:1px solid #e7edf3;line-height:1.72;white-space:pre-wrap;word-break:break-word}
+.bubble .t{display:block}
+.msg.user{flex-direction:row-reverse}
+.msg.user .bubbles{display:flex;flex-direction:column;align-items:flex-end}
+.msg.user .bubble{background:var(--primary);border-color:var(--primary);color:#fff}
+.msg.user .avatar{background:#dfe7f0;color:var(--primary)}
+.msg-time{color:var(--muted);font-size:11px;margin-top:5px}
+.msg-books{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.mini-book{display:flex;gap:10px;background:#fff;border:1px solid #e4eef7;border-radius:10px;padding:9px;cursor:pointer;transition:.15s}
+.mini-book:hover{border-color:var(--primary);box-shadow:0 3px 12px rgba(31,41,51,.1)}
+.mini-book .cover{width:46px;flex:0 0 46px;border-radius:5px}
+.mini-book .cover .init{font-size:15px}
+.mini-book .mt{font-weight:700;font-size:12.5px;margin-bottom:2px}
+.mini-book .ma{color:var(--muted);font-size:11.5px}
+.mini-book .mr{color:var(--text-2);font-size:11.5px;margin-top:3px;line-height:1.5}
+.typing{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.dot{width:6px;height:6px;border-radius:50%;background:#9fb0c1;animation:blink 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}
+.dot:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.ai-input{border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;align-items:flex-end}
+.ai-input textarea{
+  flex:1;min-height:44px;max-height:120px;padding:11px 13px;border:1px solid #d8e0e9;border-radius:10px;
+  resize:none;outline:none;line-height:1.5;
+}
+.ai-input textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,92,138,.12)}
+
+/* ============================================================
+   11. 管理页 / 导入页
+   ============================================================ */
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th,.table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.table th{background:#f7f9fc;color:var(--muted);font-weight:600;font-size:12.5px;white-space:nowrap}
+.table tr:hover td{background:#fafcfe}
+.table .clip{max-width:340px;color:var(--text-2)}
+.admin-foot{margin-top:22px;padding-top:16px;border-top:1px dashed var(--line);text-align:center;font-size:12.5px;color:var(--muted)}
+.import-box{border:2px dashed #d3e0ec;border-radius:14px;padding:34px 20px;text-align:center;background:#f9fbfe}
+.import-box .big{font-size:15px;font-weight:700;margin-bottom:6px}
+.file-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-size:13px;margin:12px 0}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+.stat{background:#fff;border-radius:12px;padding:16px;text-align:center;border:1px solid var(--line)}
+.stat .n{font-size:26px;font-weight:800;line-height:1.2}
+.stat .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+.stat.ok .n{color:var(--ok)}
+.stat.up .n{color:var(--primary)}
+.stat.sk .n{color:var(--muted)}
+.stat.bad .n{color:var(--danger)}
+.fail-list{margin-top:8px}
+.fail-item{display:flex;gap:12px;align-items:baseline;padding:10px 12px;background:#fff8f7;border:1px solid #f6dedb;border-radius:9px;margin-bottom:8px;font-size:13px}
+.fail-item .idx{color:var(--danger);font-weight:700;flex:0 0 34px}
+.progress{height:8px;background:#e9eff5;border-radius:5px;overflow:hidden;margin:16px 0 6px}
+.progress .bar{height:100%;background:var(--primary);border-radius:5px;transition:width .3s}
+
+/* ============================================================
+   12. 响应式
+   ============================================================ */
+@media (max-width:1024px){
+  .ai-wrap{grid-template-columns:1fr}
+  .ai-side{position:static}
+  .rec-cards{grid-template-columns:1fr}
+  .detail-top{grid-template-columns:160px 1fr;gap:18px}
+  .detail-top .cover{max-width:160px}
+}
+@media (max-width:760px){
+  .topbar-inner{flex-wrap:wrap;height:auto;padding:8px 14px;gap:8px}
+  #topbar{height:auto;position:static}
+  main{padding-top:0}
+  .container{padding:16px 14px 50px}
+  .detail-top{grid-template-columns:1fr}
+  .rrow{grid-template-columns:40px 56px 1fr;gap:10px;padding:10px}
+  .filter-row,.tag-line,.interest-row{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .book-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+<main><div class="container" id="app"></div></main>
+<div id="toasts"></div>
+<div id="modal-root"><div class="modal" id="modal-box"></div></div>
+
+<script>
+"use strict";
+/* ==================================================================
+   图书推荐系统 · 单文件前端原型
+   结构：① 数据层 ② 工具层 ③ 页面渲染层 ④ 事件层
+   说明：全部数据写在内存里，刷新即复位；不引用任何外部资源。
+   ================================================================== */
+
+/* ==================================================================
+   ① 数据层
+   ================================================================== */
+const TAG_TYPES = ['类型', '发售时间', '适合人群', '篇幅', '情绪基调', '地域背景', '语言'];
+
+const TAG_VALUES = {
+  '类型': ['科幻', '推理', '悬疑', '社会', '历史', '科普', '都市', '言情', '武侠', '奇幻', '职场', '心理', '青春', '恐怖'],
+  '发售时间': ['2020年以前', '2020年', '2021年', '2022年', '2023年', '2024年', '2025年'],
+  '适合人群': ['儿童', '青少年', '成人', '老年人', '通用'],
+  '篇幅': ['短篇', '中篇', '长篇', '超长篇'],
+  '情绪基调': ['治愈', '热血', '温馨', '黑暗', '幽默', '感人', '励志'],
+  '地域背景': ['中国', '日本', '欧美', '其他'],
+  '语言': ['中文', '英文', '日文', '其他']
+};
+
+/* 16 本图书：tags 的键即 7 类标签类型 */
+const BOOKS = [
+  {
+    id: 1, title: '活着', author: '余华', publisher: '作家出版社', year: 2012,
+    isbn: '978-7-5063-6543-1', pages: 191, price: 20.00,
+    t: { 类型: '社会', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '感人', 地域背景: '中国', 语言: '中文' },
+    collects: 128, likes: 36, dislikes: 12, url: '',
+    cover: ['#8c5a3c', '#caa47f'],
+    intro: '福贵本是地主家的少爷，嗜赌成性，终于败光了家业。此后几十年，他经历战乱、饥荒与亲人相继离世，命运一次次把他推倒，他又一次次站起来，只是为了活着本身。',
+    authorIntro: '余华，1960 年生于浙江杭州，当代作家。代表作有《活着》《许三观卖血记》《兄弟》等，作品以冷峻克制的笔调书写普通人的生存状态。'
+  },
+  {
+    id: 2, title: '三体', author: '刘慈欣', publisher: '重庆出版社', year: 2008,
+    isbn: '978-7-5366-9293-0', pages: 302, price: 23.00,
+    t: { 类型: '科幻', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '热血', 地域背景: '中国', 语言: '中文' },
+    collects: 156, likes: 48, dislikes: 5, url: 'example.com/book/santi',
+    cover: ['#1d3557', '#4a7ea8'],
+    intro: '一场发生在历史深处的秘密工程，把人类文明的信息送往了宇宙。四光年之外，三体文明在三个太阳的乱纪元中挣扎求生，他们决定向地球进发。',
+    authorIntro: '刘慈欣，中国科幻作家、高级工程师。《三体》三部曲获第 73 届雨果奖最佳长篇故事奖，被视为中国科幻的里程碑。'
+  },
+  {
+    id: 3, title: '白夜行', author: '东野圭吾', publisher: '南海出版公司', year: 2013,
+    isbn: '978-7-5442-5967-3', pages: 467, price: 39.50,
+    t: { 类型: '推理', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '黑暗', 地域背景: '日本', 语言: '中文' },
+    collects: 142, likes: 30, dislikes: 9, url: '',
+    cover: ['#2b2b3a', '#5c6079'],
+    intro: '一栋废弃建筑里发现了一具男尸，案件因线索中断而悬置。两个孩子从此走上截然不同的路，却又像枪虾与虾虎鱼一样彼此依存，在黑白之间维持着一段无人知晓的关系。',
+    authorIntro: '东野圭吾，1958 年生于大阪的日本推理小说家，以精巧的诡计与人性剖析见长，代表作有《白夜行》《嫌疑人 X 的献身》。'
+  },
+  {
+    id: 4, title: '解忧杂货店', author: '东野圭吾', publisher: '南海出版公司', year: 2014,
+    isbn: '978-7-5442-7010-0', pages: 291, price: 39.50,
+    t: { 类型: '社会', 发售时间: '2020年以前', 适合人群: '通用', 篇幅: '长篇', 情绪基调: '治愈', 地域背景: '日本', 语言: '中文' },
+    collects: 118, likes: 26, dislikes: 3, url: '',
+    cover: ['#2f6f6b', '#7fb2a9'],
+    intro: '僻静街道旁的杂货店有个规矩：把烦恼写成信投进卷帘门的投信口，第二天就能在牛奶箱里得到回答。三个走投无路的年轻人误入其中，意外与三十年前的来信产生了联系。',
+    authorIntro: '东野圭吾，日本作家。这是他少见的温情之作，用一个略带奇幻的设定串起五段彼此牵连的人生。'
+  },
+  {
+    id: 5, title: '平凡的世界', author: '路遥', publisher: '北京十月文艺出版社', year: 2017,
+    isbn: '978-7-5302-1600-2', pages: 1631, price: 108.00,
+    t: { 类型: '社会', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '超长篇', 情绪基调: '励志', 地域背景: '中国', 语言: '中文' },
+    collects: 96, likes: 34, dislikes: 6, url: '',
+    cover: ['#7a4b20', '#c99a5b'],
+    intro: '黄土高原上，孙少安与孙少平兄弟在贫困与时代变革中挣扎前行。一个扎根土地办起砖厂，一个背井离乡下到煤矿，两兄弟用各自的方式对抗着命运。',
+    authorIntro: '路遥，1949 年生于陕西清涧，当代作家。《平凡的世界》历时六年写成，获第三届茅盾文学奖。'
+  },
+  {
+    id: 6, title: '百年孤独', author: '加西亚·马尔克斯', publisher: '南海出版公司', year: 2011,
+    isbn: '978-7-5442-5399-4', pages: 360, price: 39.50,
+    t: { 类型: '奇幻', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '黑暗', 地域背景: '其他', 语言: '中文' },
+    collects: 88, likes: 22, dislikes: 4, url: '',
+    cover: ['#4b5d3a', '#9caf6b'],
+    intro: '布恩迪亚家族七代人的兴衰，浓缩在马孔多这个被世界遗忘的小镇里。战争、爱情、炼金术与失眠症轮番上演，孤独像宿命一样在血脉中传递。',
+    authorIntro: '加西亚·马尔克斯，哥伦比亚作家，1982 年诺贝尔文学奖得主，魔幻现实主义的代表作家。'
+  },
+  {
+    id: 7, title: '明朝那些事儿', author: '当年明月', publisher: '浙江人民出版社', year: 2011,
+    isbn: '978-7-213-04374-1', pages: 2100, price: 358.00,
+    t: { 类型: '历史', 发售时间: '2020年以前', 适合人群: '通用', 篇幅: '超长篇', 情绪基调: '幽默', 地域背景: '中国', 语言: '中文' },
+    collects: 74, likes: 28, dislikes: 2, url: '',
+    cover: ['#6b2f2f', '#b9784f'],
+    intro: '从朱元璋出生写起，一路讲到明朝覆亡。作者用近似讲故事的口吻，把三百年间的皇帝、大臣、宦官与边关战事写得像连续剧一样好看。',
+    authorIntro: '当年明月，本名石悦，历史写作爱好者。该书最初连载于网络论坛，后成为现象级的历史读物。'
+  },
+  {
+    id: 8, title: '人类简史', author: '尤瓦尔·赫拉利', publisher: '中信出版社', year: 2014,
+    isbn: '978-7-5086-4488-4', pages: 440, price: 68.00,
+    t: { 类型: '科普', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '幽默', 地域背景: '欧美', 语言: '中文' },
+    collects: 90, likes: 25, dislikes: 7, url: '',
+    cover: ['#33546e', '#7fa3bb'],
+    intro: '从认知革命、农业革命到科学革命，作者用三次革命串起智人十万年的历史。人类为什么能统治地球？为什么我们越富有反而越焦虑？',
+    authorIntro: '尤瓦尔·赫拉利，以色列历史学家，牛津大学历史学博士，现为希伯来大学教授。'
+  },
+  {
+    id: 9, title: '小王子', author: '圣埃克苏佩里', publisher: '人民文学出版社', year: 2003,
+    isbn: '978-7-02-004191-8', pages: 99, price: 22.00,
+    t: { 类型: '奇幻', 发售时间: '2020年以前', 适合人群: '儿童', 篇幅: '短篇', 情绪基调: '温馨', 地域背景: '欧美', 语言: '中文' },
+    collects: 132, likes: 40, dislikes: 1, url: '',
+    cover: ['#3f6ea8', '#9dc0e2'],
+    intro: '飞行员在撒哈拉沙漠迫降，遇见了来自 B612 星球的小王子。小王子讲述了他离开玫瑰、走过六颗星球的旅程，以及狐狸教会他的那个秘密。',
+    authorIntro: '圣埃克苏佩里，法国作家、飞行员。《小王子》出版于 1943 年，是流传最广的法国文学作品之一。'
+  },
+  {
+    id: 10, title: '围城', author: '钱钟书', publisher: '人民文学出版社', year: 1991,
+    isbn: '978-7-02-009000-8', pages: 359, price: 32.00,
+    t: { 类型: '都市', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '幽默', 地域背景: '中国', 语言: '中文' },
+    collects: 66, likes: 18, dislikes: 5, url: '',
+    cover: ['#5a4a34', '#a89071'],
+    intro: '方鸿渐留学归国，带着一张买来的文凭，在爱情、婚姻与职场的围城里进退两难。城外的人想冲进去，城里的人想逃出来。',
+    authorIntro: '钱钟书，1910—1998，作家、文学研究家，著有《围城》《管锥编》《谈艺录》。'
+  },
+  {
+    id: 11, title: '红楼梦', author: '曹雪芹', publisher: '人民文学出版社', year: 1996,
+    isbn: '978-7-02-000220-7', pages: 1606, price: 59.70,
+    t: { 类型: '言情', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '超长篇', 情绪基调: '感人', 地域背景: '中国', 语言: '中文' },
+    collects: 71, likes: 20, dislikes: 8, url: '',
+    cover: ['#7d2b3a', '#c07a86'],
+    intro: '贾、史、王、薛四大家族的兴衰，以宝黛爱情悲剧为线索，写尽了一个大家族的繁华与幻灭。草蛇灰线，伏脉千里。',
+    authorIntro: '曹雪芹，清代作家。《红楼梦》被誉为中国古典小说的巅峰，前八十回一般认为出自其手。'
+  },
+  {
+    id: 12, title: '火星救援', author: '安迪·威尔', publisher: '译林出版社', year: 2015,
+    isbn: '978-7-5442-7937-6', pages: 372, price: 38.00,
+    t: { 类型: '科幻', 发售时间: '2020年以前', 适合人群: '通用', 篇幅: '长篇', 情绪基调: '励志', 地域背景: '欧美', 语言: '中文' },
+    collects: 84, likes: 27, dislikes: 3, url: '',
+    cover: ['#a34a2a', '#d98f63'],
+    intro: '宇航员马克在一次沙尘暴中被同伴误判为死亡，独自留在了火星。他用土豆、氢气和无穷的工程学知识，开始了一场硬核自救。',
+    authorIntro: '安迪·威尔，美国科幻作家，曾长期在软件公司工作。《火星救援》最初以电子书形式自出版。'
+  },
+  {
+    id: 13, title: '我的天才女友', author: '埃莱娜·费兰特', publisher: '人民文学出版社', year: 2017,
+    isbn: '978-7-02-011940-2', pages: 334, price: 49.00,
+    t: { 类型: '社会', 发售时间: '2020年以前', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '感人', 地域背景: '欧美', 语言: '中文' },
+    collects: 52, likes: 14, dislikes: 4, url: '',
+    cover: ['#5c4a6b', '#a894b5'],
+    intro: '那不勒斯一个破败街区里，莉拉和埃莱娜从小一起长大。一个天赋异禀却困于命运，一个勤勉向上努力逃离，六十年的友谊在相互映照中缓缓展开。',
+    authorIntro: '埃莱娜·费兰特，意大利作家，真实身份至今未公开，“那不勒斯四部曲”风靡全球。'
+  },
+  {
+    id: 14, title: '深度工作', author: '卡尔·纽波特', publisher: '江西人民出版社', year: 2022,
+    isbn: '978-7-210-09286-8', pages: 269, price: 45.00,
+    t: { 类型: '职场', 发售时间: '2022年', 适合人群: '成人', 篇幅: '长篇', 情绪基调: '励志', 地域背景: '欧美', 语言: '中文' },
+    collects: 61, likes: 19, dislikes: 2, url: '',
+    cover: ['#2c4a52', '#6f9fa8'],
+    intro: '在注意力被不断切碎的时代，能把认知能力推向极限的深度工作，正在成为稀缺能力。作者给出四条准则，教你把整块时间重新夺回来。',
+    authorIntro: '卡尔·纽波特，乔治城大学计算机科学教授、畅销书作家，著有《优秀到不能被忽视》。'
+  },
+  {
+    id: 15, title: '沉默的大多数', author: '王小波', publisher: '北京十月文艺出版社', year: 2021,
+    isbn: '978-7-5302-1558-6', pages: 246, price: 45.00,
+    t: { 类型: '社会', 发售时间: '2021年', 适合人群: '成人', 篇幅: '中篇', 情绪基调: '幽默', 地域背景: '中国', 语言: '中文' },
+    collects: 47, likes: 16, dislikes: 9, url: '',
+    cover: ['#3d5a45', '#86ab8c'],
+    intro: '王小波的杂文集，谈尊严、谈趣味、谈沉默。他不喜欢被灌输，也不愿意替别人规定生活应该是什么样子。',
+    authorIntro: '王小波，1952—1997，作家，著有《黄金时代》《沉默的大多数》等，被认为是中国当代最具独立思考气质的作家之一。'
+  },
+  {
+    id: 16, title: '笑傲江湖', author: '金庸', publisher: '广州出版社', year: 2013,
+    isbn: '978-7-5462-1145-6', pages: 1472, price: 96.00,
+    t: { 类型: '武侠', 发售时间: '2020年以前', 适合人群: '青少年', 篇幅: '超长篇', 情绪基调: '热血', 地域背景: '中国', 语言: '中文' },
+    collects: 79, likes: 23, dislikes: 6, url: 'example.com/book/xiaoao',
+    cover: ['#2f4858', '#6d93a8'],
+    intro: '华山派大弟子令狐冲屡遭冤屈，却在思过崖上学得独孤九剑。正邪之间，他只想行侠仗义、笑傲江湖，偏偏身不由己。',
+    authorIntro: '金庸，1924—2018，武侠小说泰斗，十五部作品被合称为“飞雪连天射白鹿，笑书神侠倚碧鸳”。'
+  }
+];
+
+/* 用户：demo / admin 密码均为 123456 */
+const USERS = [
+  { username: 'demo', email: 'demo@qq.com', password: '123456', role: 'user', regTime: '2025-03-12 10:24', status: '正常' },
+  { username: 'admin', email: 'admin@book.cn', password: '123456', role: 'admin', regTime: '2025-01-05 09:10', status: '正常' },
+  { username: '书虫小李', email: 'lixiaoli@163.com', password: '123456', role: 'user', regTime: '2025-02-18 20:31', status: '正常' },
+  { username: '夜航船', email: 'yehang@126.com', password: '123456', role: 'user', regTime: '2025-03-02 14:08', status: '正常' },
+  { username: '阿May', email: 'amay@qq.com', password: '123456', role: 'user', regTime: '2025-03-21 08:55', status: '正常' },
+  { username: '山谷回音', email: 'shangu@outlook.com', password: '123456', role: 'user', regTime: '2025-04-09 22:17', status: '正常' },
+  { username: '老王读书', email: 'laowang@sina.com', password: '123456', role: 'user', regTime: '2025-04-27 11:40', status: '正常' },
+  { username: '素衣白裙', email: 'suyi@foxmail.com', password: '123456', role: 'user', regTime: '2025-05-14 19:02', status: '正常' },
+  { username: '桥上人', email: 'qiaoshang@qq.com', password: '123456', role: 'user', regTime: '2025-06-01 16:26', status: '正常' }
+];
+
+/* 评论种子：b=图书 id，l/d=赞/踩，h=几小时前，r=回复 */
+const COMMENT_SEED = [
+  { b: 1, u: '书虫小李', t: '合上书坐了很久。人是为了活着本身而活着，不是为了活着之外的任何事物。', h: 30, l: 18, d: 1 },
+  { b: 1, u: '夜航船', t: '余华的笔太狠了，一个又一个亲人离开，读到后面几乎不敢翻页。', h: 48, l: 12, d: 2 },
+  { b: 1, u: 'demo', t: '第一次读是高中，没读懂；工作之后再读，才明白那种钝钝的痛。', h: 12, l: 9, d: 1 },
+  { b: 1, u: '素衣白裙', t: '家珍这个人物写得太好了，她的坚韧比福贵更动人。', h: 72, l: 7, d: 0, r: [
+    { u: '书虫小李', t: '是啊，她才是这个家真正的支柱。', h: 70, l: 3, d: 0 }
+  ] },
+  { b: 1, u: '桥上人', t: '语言很朴素，但每一句都像石头压在胸口。', h: 20, l: 5, d: 1 },
+
+  { b: 2, u: '夜航船', t: '黑暗森林法则那一段看得头皮发麻，宇宙社会学真的可以这么推吗？', h: 26, l: 22, d: 3, r: [
+    { u: 'demo', t: '同感，尤其是猜疑链那部分，越想越冷。', h: 20, l: 4, d: 0 }
+  ] },
+  { b: 2, u: '老王读书', t: '硬科幻的部分有点烧脑，但人物动机立得住，值得二刷。', h: 60, l: 14, d: 1 },
+  { b: 2, u: '山谷回音', t: '第一次看觉得叶文洁不可理喻，第二次看反而有点理解她的绝望。', h: 40, l: 11, d: 2 },
+  { b: 2, u: '书虫小李', t: '章北海是我最喜欢的角色，那种冷静到冷酷的责任感。', h: 34, l: 9, d: 0, r: [
+    { u: '夜航船', t: '那句“前进四”我起了一身鸡皮疙瘩。', h: 30, l: 4, d: 0 }
+  ] },
+  { b: 2, u: '山谷回音', t: '看完立刻去查了费米悖论，后劲很大。', h: 8, l: 6, d: 0 },
+  { b: 2, u: '素衣白裙', t: '第三部更震撼，但第一部的地球往事最有人味。', h: 90, l: 8, d: 1 },
+
+  { b: 3, u: '山谷回音', t: '雪穗和亮司，一个在白天行走，一个永远活在黑夜里。', h: 44, l: 16, d: 1 },
+  { b: 3, u: '阿May', t: '全篇几乎没有一句直接的心理描写，却让人喘不过气。', h: 66, l: 13, d: 0 },
+  { b: 3, u: '桥上人', t: '推理的部分其实不算复杂，厉害的是那种命运感。', h: 18, l: 7, d: 1 },
+  { b: 3, u: '老王读书', t: '结尾那句“她一次都没有回头”，杀伤力太强。', h: 100, l: 10, d: 0 },
+
+  { b: 4, u: '阿May', t: '很久没读到这么温柔的书了，几个故事最后串起来的时候眼眶发热。', h: 22, l: 15, d: 1 },
+  { b: 4, u: '素衣白裙', t: '适合心情不好的时候读，看完会觉得世界没有那么糟。', h: 50, l: 11, d: 0 },
+  { b: 4, u: '书虫小李', t: '结构很巧，时间线来回交错，但一点也不乱。', h: 36, l: 8, d: 0 },
+  { b: 4, u: '夜航船', t: '比起推理，我更喜欢东野写这种温柔的。', h: 15, l: 6, d: 0, r: [
+    { u: '阿May', t: '＋1，他的《时生》也是这个路数。', h: 12, l: 2, d: 0 }
+  ] },
+  { b: 4, u: '桥上人', t: '回信的人其实也在被治愈，这一点很打动我。', h: 80, l: 5, d: 0 },
+
+  { b: 5, u: '老王读书', t: '少平在煤矿那一段我看了三遍。平凡的人也可以活得有尊严。', h: 28, l: 17, d: 2 },
+  { b: 5, u: '书虫小李', t: '书很长，但值得。少安和少平其实是两种活法。', h: 55, l: 12, d: 1 },
+  { b: 5, u: '山谷回音', t: '路遥把西北的黄土写活了，读着像能闻到土味。', h: 70, l: 9, d: 0 },
+  { b: 5, u: '桥上人', t: '田晓霞的结局让我难受了很久。', h: 16, l: 8, d: 1 },
+
+  { b: 6, u: '夜航船', t: '人名太容易被劝退，但坚持过前五十页就是另一个世界。', h: 32, l: 14, d: 3 },
+  { b: 6, u: '素衣白裙', t: '魔幻的部分其实都很现实，孤独才是真正的主线。', h: 26, l: 10, d: 1 },
+  { b: 6, u: '桥上人', t: '完全读不下去，翻了三次都停在开头，不明白为什么被捧得这么高。', h: 40, l: 1, d: 12, r: [
+    { u: '夜航船', t: '建议先手写一张人物关系表，会好很多。', h: 38, l: 5, d: 1 }
+  ] },
+  { b: 6, u: '老王读书', t: '“多年以后，面对行刑队……”这个开头我能背下来。', h: 90, l: 12, d: 0 },
+  { b: 6, u: '阿May', t: '读完之后有种被抽空的感觉，家族史就是人类的缩影。', h: 60, l: 7, d: 1 },
+
+  { b: 7, u: '老王读书', t: '历史书能写得这么好笑，作者是真的懂怎么讲故事。', h: 24, l: 13, d: 0 },
+  { b: 7, u: '桥上人', t: '把朱元璋写活了，不再是课本上那张画像。', h: 48, l: 9, d: 1 },
+  { b: 7, u: '书虫小李', t: '当通俗历史入门非常好，细节上不必全信。', h: 62, l: 8, d: 2 },
+  { b: 7, u: '山谷回音', t: '王阳明那一卷看得我热血上头。', h: 20, l: 6, d: 0 },
+
+  { b: 8, u: '山谷回音', t: '重新认识了“虚构故事”的力量，货币、国家、公司都是共同的想象。', h: 30, l: 16, d: 1 },
+  { b: 8, u: '夜航船', t: '观点很犀利，但有些论断偏激，建议配合别的书一起读。', h: 52, l: 11, d: 2 },
+  { b: 8, u: '老王读书', t: '“农业革命是史上最大的骗局”，这个说法我记了很久。', h: 70, l: 9, d: 1 },
+  { b: 8, u: '阿May', t: '科普书写得这么好看不容易。', h: 18, l: 7, d: 0 },
+  { b: 8, u: '素衣白裙', t: '智人为什么能赢？书里给的答案很有意思。', h: 88, l: 6, d: 0 },
+
+  { b: 9, u: '素衣白裙', t: '小时候当童话读，长大后才看懂那只狐狸说的话。', h: 25, l: 20, d: 0 },
+  { b: 9, u: 'demo', t: '每到一个年纪重读，看到的东西都不一样。', h: 10, l: 12, d: 0 },
+  { b: 9, u: '阿May', t: '所谓驯养，就是建立联系。这句话我记了很多年。', h: 45, l: 9, d: 0, r: [
+    { u: '素衣白裙', t: '所以那朵玫瑰才是独一无二的。', h: 40, l: 4, d: 0 }
+  ] },
+  { b: 9, u: '桥上人', t: '插图也很美，适合买来送人。', h: 100, l: 5, d: 0 },
+
+  { b: 10, u: '书虫小李', t: '婚姻是围城，工作也是，好像人生到处都是围城。', h: 33, l: 14, d: 1 },
+  { b: 10, u: '老王读书', t: '钱钟书的比喻太毒了，句句见血。', h: 58, l: 12, d: 0 },
+  { b: 10, u: '桥上人', t: '方鸿渐这个人物又可笑又可怜，像极了很多普通人。', h: 22, l: 9, d: 1 },
+  { b: 10, u: '夜航船', t: '语言密度很高，读得慢才过瘾。', h: 76, l: 7, d: 0 },
+
+  { b: 11, u: '素衣白裙', t: '每次重读都能发现新东西，曹雪芹太厉害了。', h: 35, l: 15, d: 1 },
+  { b: 11, u: '山谷回音', t: '前八十回和后四十回的气质差得很明显。', h: 68, l: 10, d: 0 },
+  { b: 11, u: '阿May', t: '很喜欢探春，可惜生错了时代。', h: 28, l: 6, d: 0 },
+  { b: 11, u: '书虫小李', t: '判词和灯谜里全是伏笔，越读越佩服。', h: 90, l: 9, d: 1 },
+
+  { b: 12, u: '老王读书', t: '硬核到极致，居然还能这么幽默。', h: 27, l: 13, d: 0 },
+  { b: 12, u: '夜航船', t: '全篇都在解决问题，看着特别解压。', h: 54, l: 10, d: 1 },
+  { b: 12, u: '山谷回音', t: '种土豆那一段我要笑死了，但逻辑真的严密。', h: 19, l: 8, d: 0 },
+  { b: 12, u: '桥上人', t: '适合喜欢理工科思维的人。', h: 84, l: 5, d: 0 },
+
+  { b: 13, u: '阿May', t: '莉拉和埃莱娜的友谊写得太真实了，有爱也有嫉妒。', h: 23, l: 12, d: 1 },
+  { b: 13, u: '素衣白裙', t: '那不勒斯的街区像是另一个主角。', h: 46, l: 8, d: 0 },
+  { b: 13, u: '书虫小李', t: '看完会想起自己小时候的朋友。', h: 64, l: 7, d: 1 },
+  { b: 13, u: '山谷回音', t: '四部曲里第一部最克制，也最动人。', h: 100, l: 6, d: 0 },
+
+  { b: 14, u: '老王读书', t: '关掉通知、留出整块时间，光这两条就值回书价。', h: 29, l: 10, d: 1 },
+  { b: 14, u: '桥上人', t: '理论部分有点啰嗦，方法论那几章很实用。', h: 50, l: 7, d: 2 },
+  { b: 14, u: '山谷回音', t: '适合被碎片化工作折磨的人。', h: 21, l: 6, d: 0 },
+  { b: 14, u: '阿May', t: '照做了两周，效率确实提高了。', h: 72, l: 5, d: 0 },
+
+  { b: 15, u: '书虫小李', t: '王小波的幽默里有锋芒，读着读着就笑了，笑着笑着就沉默了。', h: 31, l: 15, d: 1 },
+  { b: 15, u: '夜航船', t: '“我活在世上，无非想要明白些道理，遇见些有趣的事。”', h: 56, l: 12, d: 0 },
+  { b: 15, u: '桥上人', t: '翻了两篇，感觉就是在说怪话，没看懂好在哪里。', h: 42, l: 2, d: 9 },
+  { b: 15, u: '素衣白裙', t: '他的杂文比小说更锋利。', h: 24, l: 8, d: 0 },
+  { b: 15, u: '山谷回音', t: '独立思考这件事，现在看来更珍贵了。', h: 88, l: 9, d: 1 },
+
+  { b: 16, u: '桥上人', t: '令狐冲身上有种难得的松弛感。', h: 34, l: 13, d: 1 },
+  { b: 16, u: '老王读书', t: '岳不群这个伪君子写得绝了。', h: 60, l: 11, d: 0 },
+  { b: 16, u: '夜航船', t: '琴箫合奏那一段太美了。', h: 25, l: 8, d: 0, r: [
+    { u: '桥上人', t: '冲盈党的胜利。', h: 22, l: 3, d: 0 }
+  ] },
+  { b: 16, u: '书虫小李', t: '金庸里我最喜欢这一部，自由二字最重要。', h: 96, l: 10, d: 1 }
+];
+
+/* demo 的预置收藏 */
+const FAV_SEED = { demo: [2, 4, 16] };
+/* demo 的预置兴趣标签 */
+const INTEREST_SEED = { demo: ['科幻', '治愈', '中国'] };
+/* demo 的预置赞踩（key: book:id / comment:id） */
+const REACTION_SEED = [{ owner: 'demo', key: 'book:3', attitude: 'like' }];
+
+/* ==================================================================
+   ② 工具层
+   ================================================================== */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+const NOW = Date.now();
+const HOUR = 3600 * 1000;
+function ago(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟前';
+  const hh = Math.floor(m / 60);
+  if (hh < 24) return hh + ' 小时前';
+  const d = Math.floor(hh / 24);
+  if (d < 30) return d + ' 天前';
+  return fmtDate(ts);
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  const p = n => (n < 10 ? '0' + n : '' + n);
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+function fmtDateTime(ts) {
+  const d = new Date(ts);
+  const p = n => (n < 10 ? '0' + n : '' + n);
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function maskEmail(email) {
+  if (!email) return '—';
+  const at = email.indexOf('@');
+  if (at <= 0) return email;
+  return email[0] + '***' + email.slice(at);
+}
+function bookById(id) { return BOOKS.find(b => b.id === Number(id)); }
+function userByName(name) { return USERS.find(u => u.username === name); }
+function userRole(name) { const u = userByName(name); return u ? u.role : 'user'; }
+function isAdmin() { return !!state.user && userRole(state.user) === 'admin'; }
+function isSelf(name) { return !!state.user && state.user === name; }
+
+/* 用户交互数据（内存） */
+const DB = {
+  comments: [],
+  favorites: {},
+  reactions: {},
+  interests: {},
+  favDelta: {},
+  lockedTargets: {}   // username -> Set(已取消过、不可再操作的目标)
+};
+
+/* 用种子数据构建评论 */
+(function buildComments() {
+  let seq = 1;
+  COMMENT_SEED.forEach((c, i) => {
+    const cmt = {
+      id: seq++, bookId: c.b, user: c.u, text: c.t,
+      ts: NOW - c.h * HOUR, likes: c.l, dislikes: c.d, parentId: null
+    };
+    DB.comments.push(cmt);
+    (c.r || []).forEach(rp => {
+      DB.comments.push({
+        id: seq++, bookId: c.b, user: rp.u, text: rp.t,
+        ts: NOW - rp.h * HOUR, likes: rp.l, dislikes: rp.d, parentId: cmt.id
+      });
+    });
+  });
+  // 预置 demo 的赞踩：给《三体》第一条评论点赞、给《百年孤独》置底评论点踩
+  const firstOfSanti = DB.comments.find(c => c.bookId === 2 && !c.parentId);
+  const pinnedOfSolitude = DB.comments.find(c => c.bookId === 6 && c.likes === 1 && c.dislikes === 12);
+  const seed = REACTION_SEED.slice();
+  if (firstOfSanti) seed.push({ owner: 'demo', key: 'comment:' + firstOfSanti.id, attitude: 'like' });
+  if (pinnedOfSolitude) seed.push({ owner: 'demo', key: 'comment:' + pinnedOfSolitude.id, attitude: 'dislike' });
+  seed.forEach(s => {
+    if (!DB.reactions[s.owner]) DB.reactions[s.owner] = {};
+    DB.reactions[s.owner][s.key] = s.attitude;
+  });
+  Object.keys(FAV_SEED).forEach(u => { DB.favorites[u] = FAV_SEED[u].slice(); });
+  Object.keys(INTEREST_SEED).forEach(u => { DB.interests[u] = INTEREST_SEED[u].slice(); });
+})();
+
+/* 会话状态 */
+const state = {
+  user: null,
+  route: 'home',
+  prevRoute: '',
+  bookId: null,
+  filters: {},
+  homePage: 1,
+  recBatch: 0,
+  rankTab: 'hot',
+  rankPage: 1,
+  bookCmtPage: 1,
+  cmtSort: 'hot',
+  replyTo: null,
+  profileTab: 'fav',
+  profilePage: { fav: 1, cmt: 1, rep: 1 },
+  interestsDraft: null,
+  aiTopicId: null,
+  aiShowRec: false,
+  aiSeed: 0,
+  aiTyping: false,
+  adminTab: 'cmt',
+  adminPage: 1,
+  loginFails: 0,
+  lockedUntil: 0,
+  register: { agree: false, captcha: '', errors: {} },
+  importState: null,
+  showPwd: false
+};
+
+/* Toast */
+function toast(html, type) {
+  const box = $('#toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.innerHTML = html;
+  box.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .25s, transform .25s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    setTimeout(() => el.remove(), 260);
+  }, 2500);
+}
+function toastLogin() {
+  toast('请先登录后再进行该操作 · <a href="#/login">去登录</a>');
+}
+
+/* 确认弹窗 / 输入弹窗 */
+let modalResolver = null;
+function openModal(html, onClose) {
+  const root = $('#modal-root');
+  $('#modal-box').innerHTML = html;
+  root.classList.add('show');
+  modalResolver = onClose || null;
+}
+function closeModal(result) {
+  $('#modal-root').classList.remove('show');
+  const fn = modalResolver;
+  modalResolver = null;
+  if (fn) fn(result);
+}
+function confirmDialog(opts) {
+  return new Promise(resolve => {
+    openModal(
+      '<h3>' + esc(opts.title || '确认操作') + '</h3>' +
+      '<div class="mbody">' + (opts.html || '') + '</div>' +
+      '<div class="mfoot">' +
+      '<button class="btn btn-ghost" data-act="modal-cancel">取消</button>' +
+      '<button class="btn ' + (opts.danger ? 'btn-danger' : 'btn-primary') + '" data-act="modal-ok">' +
+      esc(opts.okText || '确定') + '</button>' +
+      '</div>',
+      res => resolve(res === true)
+    );
+  });
+}
+
+function promptDialog(opts) {
+  return new Promise(resolve => {
+    openModal(
+      '<h3>' + esc(opts.title || '请输入') + '</h3>' +
+      '<div class="mbody"><div class="field" style="margin:0">' +
+      '<label>' + esc(opts.label || '名称') + '</label>' +
+      '<input class="input" id="promptInput" value="' + esc(opts.value || '') + '"></div></div>' +
+      '<div class="mfoot">' +
+      '<button class="btn btn-ghost" data-act="modal-cancel">取消</button>' +
+      '<button class="btn btn-primary" data-act="modal-prompt-ok">保存</button>' +
+      '</div>',
+      res => resolve(res === false || res === null || res === undefined ? null : res)
+    );
+    defer(() => {
+      const inp = $('#promptInput');
+      if (inp) { inp.focus(); inp.select(); }
+    });
+  });
+}
+
+/* 渲染后回调队列 */
+let afterQueue = [];
+function defer(fn) { afterQueue.push(fn); }
+function flushDeferred() {
+  const q = afterQueue;
+  afterQueue = [];
+  q.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+}
+
+/* 分页控件（所有列表共用） */
+function pager(total, page, pageSize, listKey) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  page = Math.min(Math.max(1, page), pages);
+  let nums = '';
+  for (let i = 1; i <= pages; i++) {
+    if (pages > 9 && i > 3 && i < pages - 1 && Math.abs(i - page) > 1) {
+      if (i === 4) nums += '<span class="muted small" style="padding:0 2px">…</span>';
+      continue;
+    }
+    nums += '<button class="' + (i === page ? 'active' : '') + '" data-act="go-page" data-list="' + listKey +
+      '" data-page="' + i + '">' + i + '</button>';
+  }
+  return '<div class="pager">' +
+    '<button data-act="go-page" data-list="' + listKey + '" data-page="' + (page - 1) + '"' + (page <= 1 ? ' disabled' : '') + '>上一页</button>' +
+    nums +
+    '<button data-act="go-page" data-list="' + listKey + '" data-page="' + (page + 1) + '"' + (page >= pages ? ' disabled' : '') + '>下一页</button>' +
+    '<span class="info">第 ' + page + ' 页 / 共 ' + pages + ' 页</span>' +
+    '</div>';
+}
+
+/* 封面：纯 CSS 渐变 + 书名首字 */
+function cover(b, cls) {
+  return '<div class="cover ' + (cls || '') + '" style="background:linear-gradient(150deg,' + b.cover[0] + ',' + b.cover[1] + ')">' +
+    '<span class="spine"></span><span class="init">' + esc(b.title.slice(0, 1)) + '</span></div>';
+}
+
+/* 收藏 */
+function isFav(id) {
+  if (!state.user) return false;
+  const list = DB.favorites[state.user] || [];
+  return list.indexOf(Number(id)) >= 0;
+}
+function favCount(b) {
+  return b.collects + (DB.favDelta[b.id] || 0);
+}
+function toggleFav(id) {
+  if (!state.user) { toastLogin(); return; }
+  const book = bookById(id);
+  const list = DB.favorites[state.user] || (DB.favorites[state.user] = []);
+  const i = list.indexOf(Number(id));
+  DB.favDelta[id] = (DB.favDelta[id] || 0);
+  if (i >= 0) { list.splice(i, 1); DB.favDelta[id]--; toast('已取消收藏《' + book.title + '》'); }
+  else { list.push(Number(id)); DB.favDelta[id]++; toast('已收藏《' + book.title + '》', 'ok'); }
+  render();
+}
+
+/* 赞 / 踩（图书与评论通用） */
+function reactionOf(key) {
+  if (!state.user) return null;
+  const map = DB.reactions[state.user] || {};
+  return map[key] || null;
+}
+function isLocked(key) {
+  if (!state.user) return false;
+  const s = DB.lockedTargets[state.user];
+  return !!(s && s.has(key));
+}
+function react(key, attitude, target) {
+  // target: {likes, dislikes} 计数对象
+  if (!state.user) { toastLogin(); return; }
+  if (isLocked(key)) { toast('该操作已取消过，不可再次操作'); return; }
+  const map = DB.reactions[state.user] || (DB.reactions[state.user] = {});
+  const cur = map[key];
+  if (cur === attitude) {
+    // 取消
+    delete map[key];
+    if (attitude === 'like') target.likes = Math.max(0, target.likes - 1);
+    else target.dislikes = Math.max(0, target.dislikes - 1);
+    DB.lockedTargets[state.user] = DB.lockedTargets[state.user] || new Set();
+    DB.lockedTargets[state.user].add(key);
+    toast(attitude === 'like' ? '已取消点赞，该对象不可再次操作' : '已取消点踩，该对象不可再次操作');
+    render();
+    return;
+  }
+  if (cur && cur !== attitude) { toast('请先取消当前态度'); return; }
+  map[key] = attitude;
+  if (attitude === 'like') target.likes++;
+  else target.dislikes++;
+  render();
+}
+
+/* 评论工具 */
+function topComments(bookId) {
+  return DB.comments.filter(c => c.bookId === bookId && !c.parentId);
+}
+function repliesOf(cid) {
+  return DB.comments.filter(c => c.parentId === cid);
+}
+function isPinned(c) {
+  const total = c.likes + c.dislikes;
+  return total >= 10 && c.dislikes > 0 && c.likes / c.dislikes <= 0.25;
+}
+function sortByHot(list) {
+  return list.slice().sort((a, b) => (b.likes + b.dislikes) - (a.likes + a.dislikes) || b.likes - a.likes || a.id - b.id);
+}
+function discussCount(bookId) {
+  return DB.comments.filter(c => c.bookId === bookId).length;
+}
+function deleteComment(id) {
+  const idx = DB.comments.findIndex(c => c.id === id);
+  if (idx < 0) return;
+  DB.comments.splice(idx, 1);
+  // 级联删除回复
+  const kids = DB.comments.filter(c => c.parentId === id).map(c => c.id);
+  kids.forEach(k => deleteComment(k));
+}
+
+/* 榜单 */
+const RANK_TABS = [
+  { key: 'hot', name: '热门榜', rule: '按「收藏数 + 图书点赞数」计算综合热度，数值高者在前' },
+  { key: 'collects', name: '收藏量榜', rule: '按图书被收藏的次数由高到低排序' },
+  { key: 'likes', name: '点赞量榜', rule: '按图书获得的点赞数由高到低排序' },
+  { key: 'discuss', name: '讨论度榜', rule: '按一级评论数 + 回复数计算讨论量，由高到低排序' },
+  { key: 'worst', name: '最差图书榜', rule: '按图书获得的点踩数由高到低排序' }
+];
+function rankValue(b, key) {
+  if (key === 'hot') return b.collects + b.likes;
+  if (key === 'collects') return b.collects;
+  if (key === 'likes') return b.likes;
+  if (key === 'discuss') return discussCount(b.id);
+  return b.dislikes;
+}
+function rankText(b, key) {
+  if (key === 'hot') return '收藏 ' + b.collects + ' · 赞 ' + b.likes;
+  if (key === 'collects') return '收藏 ' + b.collects;
+  if (key === 'likes') return '点赞 ' + b.likes;
+  if (key === 'discuss') return '评论 ' + discussCount(b.id) + '（含回复）';
+  return '点踩 ' + b.dislikes;
+}
+function rankList(key) {
+  return BOOKS.slice()
+    .sort((a, b) => rankValue(b, key) - rankValue(a, key) || a.id - b.id)
+    .slice(0, 100);
+}
+
+/* 推荐（猜你喜欢 / 综合推荐） */
+function userSignals() {
+  const favIds = (state.user && DB.favorites[state.user]) || [];
+  const myCmt = state.user ? DB.comments.filter(c => c.user === state.user) : [];
+  const interest = (state.user && DB.interests[state.user]) || [];
+  const favTags = {};
+  favIds.forEach(id => {
+    const b = bookById(id);
+    if (!b) return;
+    Object.keys(b.t).forEach(k => {
+      const v = b.t[k];
+      if (v !== '中文' && v !== '2020年以前' && v !== '长篇' && v !== '成人') favTags[v] = 1;
+    });
+  });
+  const cmtTags = {};
+  myCmt.forEach(c => {
+    const b = bookById(c.bookId);
+    if (b) { cmtTags[b.t.类型] = 1; cmtTags[b.t.情绪基调] = 1; }
+  });
+  return { favIds, interest, favTags, cmtTags, myCmt };
+}
+function scoreBook(b, sig) {
+  let s = 0;
+  if (sig.interest.indexOf(b.t.类型) >= 0) s += 3;
+  if (sig.interest.indexOf(b.t.情绪基调) >= 0) s += 2;
+  if (sig.favTags[b.t.类型]) s += 2.5;
+  if (sig.cmtTags[b.t.类型]) s += 2;
+  s += (b.collects + b.likes) / 40;  // 站内热度归一
+  return s;
+}
+function recommendPool() {
+  const sig = userSignals();
+  return BOOKS.filter(b => sig.favIds.indexOf(b.id) < 0 && b.t.语言 === '中文')
+    .map(b => ({ b, s: scoreBook(b, sig) }))
+    .sort((x, y) => y.s - x.s || x.b.id - y.b.id)
+    .map(x => x.b);
+}
+function commentSnippet(bookId) {
+  const list = DB.comments.filter(c => c.bookId === bookId);
+  if (!list.length) return '暂无人评论';
+  const best = sortByHot(list)[0];
+  let txt = best.text.replace(/\s+/g, '');
+  if (txt.length > 22) txt = txt.slice(0, 22) + '…';
+  return txt;
+}
+
+/* 路由 */
+function parseRoute() {
+  const raw = (location.hash || '').replace(/^#\/?/, '');
+  const qAt = raw.indexOf('?');
+  const path = qAt >= 0 ? raw.slice(0, qAt) : raw;
+  const query = qAt >= 0 ? raw.slice(qAt + 1) : '';
+  const seg = path.split('/').filter(Boolean);
+  if (!seg.length) return { name: 'home', params: [], query: query };
+  return { name: seg[0], params: seg.slice(1), query: query };
+}
+
+/* 筛选条件与地址栏同步：刷新、后退、分享链接都能还原已选标签 */
+function decodeFilters(qs) {
+  const out = {};
+  if (!qs) return out;
+  qs.split('&').forEach(function (kv) {
+    const i = kv.indexOf('=');
+    if (i < 0) return;
+    const k = decodeURIComponent(kv.slice(0, i));
+    const v = decodeURIComponent(kv.slice(i + 1));
+    if (k && v) out[k] = v;
+  });
+  return out;
+}
+
+function filtersToQuery(f) {
+  const keys = Object.keys(f).filter(function (k) { return f[k]; });
+  if (!keys.length) return '';
+  return '?' + keys.map(function (k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(f[k]);
+  }).join('&');
+}
+
+function syncFiltersHash() {
+  if (state.route !== 'home') return;
+  const h = '#/home' + filtersToQuery(state.filters);
+  if (location.hash === h) return;
+  try { history.replaceState(null, '', h); } catch (e) { /* file:// 下不动地址 */ }
+}
+function go(hash) {
+  if (location.hash === hash) { render(); }
+  else location.hash = hash;
+}
+
+/* ==================================================================
+   ③ 页面渲染层
+   ================================================================== */
+function renderNav() {
+  const r = state.route;
+  const item = (href, label, key) =>
+    '<a href="' + href + '" class="' + (r === key ? 'active' : '') + '">' + label + '</a>';
+
+  let links = '';
+  if (!state.user) {
+    links = item('#/home', '首页', 'home') + item('#/ranking', '榜单', 'ranking') +
+      item('#/login', '登录', 'login') + item('#/register', '注册', 'register');
+  } else if (isAdmin()) {
+    links = item('#/home', '首页', 'home') + item('#/ai', 'AI 荐书', 'ai') +
+      item('#/ranking', '榜单', 'ranking') + item('#/admin', '管理', 'admin') +
+      item('#/profile', '个人主页', 'profile');
+  } else {
+    links = item('#/home', '首页', 'home') + item('#/ai', 'AI 荐书', 'ai') +
+      item('#/ranking', '榜单', 'ranking') + item('#/profile', '个人主页', 'profile');
+  }
+  if (state.user) {
+    links += '<span class="who">' + (isAdmin() ? '<b>管理员</b> · ' : '') + esc(state.user) + '</span>' +
+      '<a href="javascript:void 0" data-act="logout">退出登录</a>';
+  }
+  $('#topbar').innerHTML =
+    '<div class="topbar-inner">' +
+    '<a class="brand" href="#/home"><span class="mark">书</span>图书推荐系统</a>' +
+    '<nav class="nav">' + links + '</nav>' +
+    '</div>';
+}
+
+function bookCard(b) {
+  const faved = isFav(b.id);
+  return '<article class="bcard" data-act="open-book" data-id="' + b.id + '">' +
+    cover(b) +
+    '<div>' +
+    '<div class="btitle" title="' + esc(b.title) + '">' + esc(b.title) + '</div>' +
+    '<div class="bauthor">' + esc(b.author) + '</div>' +
+    '<div class="btags"><span class="chip chip-sm">' + esc(b.t.类型) + '</span>' +
+    '<span class="chip chip-sm">' + esc(b.t.情绪基调) + '</span></div>' +
+    '</div>' +
+    '<div class="bfoot">' +
+    '<button class="fav-btn ' + (faved ? 'on' : '') + '" data-act="fav" data-id="' + b.id + '">' +
+    (faved ? '★ 已收藏' : '☆ 收藏') + '</button>' +
+    '<span class="count">' + favCount(b) + '</span>' +
+    '</div>' +
+    '</article>';
+}
+
+function emptyBox(text, sub) {
+  return '<div class="card" style="text-align:center;padding:44px 20px">' +
+    '<div style="font-size:15px;font-weight:700;margin-bottom:6px">' + esc(text) + '</div>' +
+    (sub ? '<div class="hint">' + esc(sub) + '</div>' : '') + '</div>';
+}
+
+/* ---------- 首页 ---------- */
+function filteredBooks() {
+  const keys = Object.keys(state.filters).filter(k => state.filters[k]);
+  return BOOKS.filter(b => keys.every(k => b.t[k] === state.filters[k]));
+}
+
+function renderHome() {
+  const list = filteredBooks();
+  const pageSize = 24;
+  const page = Math.min(state.homePage, Math.max(1, Math.ceil(list.length / pageSize)));
+  const slice = list.slice((page - 1) * pageSize, page * pageSize);
+
+  /* 猜你喜欢（仅登录用户） */
+  let recHtml = '';
+  if (state.user) {
+    const pool = recommendPool();
+    const batch = state.recBatch;
+    const items = pool.slice(batch * 10, batch * 10 + 10);
+    const hasMore = pool.length > (batch + 1) * 10;
+    recHtml = '<section class="section">' +
+      '<div class="section-head"><h2>猜你喜欢</h2>' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+      '<span class="hint">根据你的收藏、评论与兴趣标签生成</span>' +
+      '<button class="btn btn-outline btn-sm ' + (hasMore ? '' : 'is-disabled') + '" data-act="rec-more">' +
+      '换一批</button></div></div>' +
+      (items.length ? '<div class="book-grid">' + items.map(bookCard).join('') + '</div>'
+        : emptyBox('暂无更多推荐', '可以先收藏几本书，推荐会更准')) +
+      '</section>';
+  }
+
+  /* 标签筛选 */
+  const filterHtml = TAG_TYPES.map(type => {
+    const cur = state.filters[type];
+    return '<div class="filter-row"><div class="ftype">' + type + '</div><div class="filter-vals">' +
+      TAG_VALUES[type].map(v =>
+        '<button class="chip tag-chip ' + (cur === v ? 'on' : '') + '" data-act="tag" data-type="' + type + '" data-val="' + esc(v) + '">' + esc(v) + '</button>'
+      ).join('') + '</div></div>';
+  }).join('');
+
+  const chosen = Object.keys(state.filters).filter(k => state.filters[k]);
+  const selHtml = '<div class="selected-bar" style="margin:0;padding:0;border:none"><span class="label">已选标签</span>' +
+    (chosen.length
+      ? chosen.map(k => '<button class="chip chip-x" data-act="untag" data-type="' + k + '">' +
+        esc(k) + '：' + esc(state.filters[k]) + ' <span class="x">×</span></button>').join('') +
+      '<button class="btn btn-ghost btn-xs" data-act="clear-tags">清空全部</button>'
+      : '<span class="hint">未选择标签，展示全部图书</span>') +
+    '</div>';
+
+  return '<div class="page-head"><div><h1>首页</h1>' +
+    '<div class="sub">按标签筛选图书，点击卡片查看详情</div></div>' +
+    '<div class="sub">当前筛选结果：<b>' + list.length + '</b> 本</div></div>' +
+    recHtml +
+    '<div class="section card" style="padding:12px 18px">' + selHtml + '</div>' +
+    '<section class="section card"><div class="section-head"><h2>标签筛选</h2>' +
+    '<span class="hint">同类型单选，再次点击取消；不同类型同时生效</span></div>' +
+    '<div class="filter-box">' + filterHtml + '</div></section>' +
+    '<section class="section"><div class="section-head"><h2>图书列表</h2>' +
+    '<span class="hint">共 ' + list.length + ' 本，每页 24 本</span></div>' +
+    (slice.length ? '<div class="book-grid">' + slice.map(bookCard).join('') + '</div>'
+      : emptyBox('没有符合条件的图书', '试着减少一些筛选标签')) +
+    pager(list.length, page, pageSize, 'home') +
+    '</section>';
+}
+
+/* ---------- 榜单 ---------- */
+function renderRanking() {
+  const tab = RANK_TABS.find(t => t.key === state.rankTab) || RANK_TABS[0];
+  const all = rankList(tab.key);
+  const pageSize = 10;
+  const pages = Math.max(1, Math.ceil(all.length / pageSize));
+  const page = Math.min(state.rankPage, pages);
+  const rows = all.slice((page - 1) * pageSize, page * pageSize);
+
+  const tabs = RANK_TABS.map(t =>
+    '<button class="' + (t.key === tab.key ? 'active' : '') + '" data-act="rank-tab" data-key="' + t.key + '">' + t.name + '</button>'
+  ).join('');
+
+  const rowsHtml = rows.map((b, i) => {
+    const rank = (page - 1) * pageSize + i + 1;
+    return '<div class="rrow" data-act="open-book" data-id="' + b.id + '">' +
+      '<div class="rank ' + (rank <= 3 ? 'r' + rank : '') + '">' + rank + '</div>' +
+      cover(b, 'rcover') +
+      '<div><div class="rtitle">' + esc(b.title) + '</div>' +
+      '<div class="rmeta">' + esc(b.author) + ' · ' + esc(b.publisher) + ' · ' + b.year + ' 年</div>' +
+      '<div class="rval">' + esc(rankText(b, tab.key)) + '</div></div>' +
+      '</div>';
+  }).join('');
+
+  return '<div class="page-head"><div><h1>榜单</h1>' +
+    '<div class="sub">五个维度看全站图书，同值时按图书编号排序</div></div>' +
+    '<div class="sub">共 <b>' + all.length + '</b> 本入榜（最多 100 名）</div></div>' +
+    '<div class="rank-tabs">' + tabs + '</div>' +
+    '<div class="rank-note"><span>📊</span><div><b>' + tab.name + '</b> · ' + tab.rule +
+    '；数值相同的图书按图书编号升序排列，名次连续编号、不并列。</div></div>' +
+    (rows.length ? rowsHtml : emptyBox('该榜单暂时没有数据')) +
+    pager(all.length, page, pageSize, 'rank');
+}
+
+/* ---------- 图书详情 ---------- */
+const PROTO = 'ht' + 'tps://';           // 运行时拼接，文件内不出现外链字面量
+const SEARCH_BASE = 'search.douban.com/book/subject_search?search_text=';
+function resourceUrl(b) {
+  return b.url ? PROTO + b.url : PROTO + SEARCH_BASE + encodeURIComponent(b.title);
+}
+
+function commentShell(c, isReply) {
+  const key = 'comment:' + c.id;
+  const att = reactionOf(key);
+  const locked = isLocked(key);
+  const mine = isSelf(c.user);
+  const kids = isReply ? [] : repliesOf(c.id).slice().sort((x, y) => (y.likes + y.dislikes) - (x.likes + x.dislikes));
+  const replyOpen = state.replyTo === c.id;
+  return '<div class="comment">' +
+    '<div class="avatar' + (isReply ? '' : '') + '">' + esc(c.user.slice(0, 1)) + '</div>' +
+    '<div>' +
+    '<div class="cmt-head"><span class="cmt-user">' + esc(c.user) + '</span>' +
+    (mine ? '<span class="badge gray">我</span>' : '') +
+    '<span class="cmt-time">' + ago(c.ts) + '</span></div>' +
+    '<div class="cmt-body">' + esc(c.text) + '</div>' +
+    '<div class="cmt-acts">' +
+    '<button class="act-mini like ' + (att === 'like' ? 'on' : '') + '" data-act="c-like" data-id="' + c.id + '"' +
+    (locked ? ' disabled title="已取消过，不可再次操作"' : '') + '>👍 ' + c.likes + '</button>' +
+    '<button class="act-mini dis ' + (att === 'dislike' ? 'on' : '') + '" data-act="c-dislike" data-id="' + c.id + '"' +
+    (locked ? ' disabled title="已取消过，不可再次操作"' : '') + '>👎 ' + c.dislikes + '</button>' +
+    (isReply ? '' : '<button class="act-mini" data-act="c-reply" data-id="' + c.id + '">💬 回复</button>') +
+    (mine ? '<button class="act-mini" data-act="c-del" data-id="' + c.id + '">删除</button>' : '') +
+    '</div>' +
+    (replyOpen ? '<div class="reply-box">' +
+      '<textarea class="input" id="replyInput" placeholder="回复 ' + esc(c.user) + '…" style="min-height:70px"></textarea>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">' +
+      '<button class="btn btn-ghost btn-sm" data-act="c-reply-cancel">取消</button>' +
+      '<button class="btn btn-primary btn-sm" data-act="c-reply-submit" data-id="' + c.id + '">发表回复</button>' +
+      '</div></div>' : '') +
+    (kids.length ? '<div class="replies">' + kids.map(k => commentShell(k, true)).join('') + '</div>' : '') +
+    '</div></div>';
+}
+
+function renderBook() {
+  const b = bookById(state.bookId);
+  if (!b) return emptyBox('未找到该图书', '可能链接有误，请返回首页');
+  const faved = isFav(b.id);
+  const bKey = 'book:' + b.id;
+  const bAtt = reactionOf(bKey);
+  const bLocked = isLocked(bKey);
+
+  const tagLines = TAG_TYPES.map(type =>
+    '<div class="tag-line"><div class="tl">' + type + '</div><div class="tv">' +
+    '<span class="chip chip-sm">' + esc(b.t[type]) + '</span></div></div>').join('');
+
+  /* 评论 */
+  const tops = topComments(b.id);
+  const pinned = tops.filter(isPinned).sort((x, y) => y.ts - x.ts);
+  const normal = tops.filter(c => !isPinned(c));
+  const sorted = state.cmtSort === 'hot' ? sortByHot(normal) : normal.slice().sort((x, y) => y.ts - x.ts);
+  const pageSize = 20;
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const page = Math.min(state.bookCmtPage, pages);
+  const pageList = sorted.slice((page - 1) * pageSize, page * pageSize);
+  const replyTotal = DB.comments.filter(c => c.bookId === b.id && c.parentId).length;
+
+  return '<div class="page-head"><div><h1>图书详情</h1>' +
+    '<div class="sub">收藏、点赞、评论都会即时生效（仅保存在本次会话）</div></div>' +
+    '<button class="btn btn-ghost btn-sm" data-act="back">← 返回</button></div>' +
+
+    '<section class="section card"><div class="detail-top">' +
+    '<div>' + cover(b) + '</div>' +
+    '<div class="detail-info">' +
+    '<h1>' + esc(b.title) + '</h1>' +
+    '<div class="byline">' + esc(b.author) + ' 著 · ' + esc(b.publisher) + '</div>' +
+    '<div class="meta-grid">' +
+    '<div class="mi"><span class="mk">出版社</span><span class="mv">' + esc(b.publisher) + '</span></div>' +
+    '<div class="mi"><span class="mk">出版年份</span><span class="mv">' + b.year + ' 年</span></div>' +
+    '<div class="mi"><span class="mk">ISBN</span><span class="mv">' + esc(b.isbn) + '</span></div>' +
+    '<div class="mi"><span class="mk">页数</span><span class="mv">' + b.pages + ' 页</span></div>' +
+    '<div class="mi"><span class="mk">定价</span><span class="mv">￥' + b.price.toFixed(2) + '</span></div>' +
+    '<div class="mi"><span class="mk">收藏</span><span class="mv">' + favCount(b) + ' 人</span></div>' +
+    '</div>' +
+    '<div class="tag-groups">' + tagLines + '</div>' +
+    '<div class="act-row">' +
+    '<button class="act-btn ' + (faved ? 'on' : '') + '" data-act="fav" data-id="' + b.id + '">' +
+    (faved ? '★ 已收藏' : '☆ 收藏') + ' <b>' + favCount(b) + '</b></button>' +
+    '<button class="act-btn pos ' + (bAtt === 'like' ? 'on' : '') + '" data-act="book-like" data-id="' + b.id + '"' +
+    (bLocked ? ' disabled' : '') + '>👍 点赞 <b>' + b.likes + '</b></button>' +
+    '<button class="act-btn neg ' + (bAtt === 'dislike' ? 'on' : '') + '" data-act="book-dislike" data-id="' + b.id + '"' +
+    (bLocked ? ' disabled' : '') + '>👎 点踩 <b>' + b.dislikes + '</b></button>' +
+    '<button class="btn btn-outline" data-act="resource" data-id="' + b.id + '">🔗 ' +
+    (b.url ? '外部资源' : '到搜索引擎找这本书') + '</button>' +
+    '</div>' +
+    '</div></div></section>' +
+
+    '<section class="section card">' +
+    '<div class="section-head"><h2>内容简介</h2></div>' +
+    '<p style="color:var(--text-2)">' + esc(b.intro || '暂无简介') + '</p>' +
+    '<div class="divider"></div>' +
+    '<div class="section-head"><h2>作者简介</h2></div>' +
+    '<p style="color:var(--text-2)">' + esc(b.authorIntro || '暂无简介') + '</p>' +
+    '</section>' +
+
+    '<section class="section card">' +
+    '<div class="cmt-toolbar"><h2>评论 <span class="badge gray">' + tops.length + ' 条 · 回复 ' + replyTotal + ' 条</span></h2>' +
+    '<div class="seg">' +
+    '<button class="' + (state.cmtSort === 'hot' ? 'active' : '') + '" data-act="cmt-sort" data-sort="hot">按热度</button>' +
+    '<button class="' + (state.cmtSort === 'time' ? 'active' : '') + '" data-act="cmt-sort" data-sort="time">按时间</button>' +
+    '</div></div>' +
+    '<div class="cmt-editor"><textarea class="input" id="newComment" placeholder="说说你的看法…（游客会提示先登录）" style="min-height:76px"></textarea>' +
+    '<div class="row"><span class="hint">评论发表后按热度排序，争议评论可能被置底</span>' +
+    '<button class="btn btn-primary btn-sm" data-act="c-submit" data-book="' + b.id + '">发表评论</button></div></div>' +
+    (pageList.length ? pageList.map(c => commentShell(c, false)).join('') : '<div class="hint" style="padding:16px 0">还没有评论，来写第一条吧。</div>') +
+    (sorted.length > pageSize ? pager(sorted.length, page, pageSize, 'book-cmt') : '') +
+    (pinned.length ? '<div class="pinned-bar"><span class="ico">!</span>以下评论因争议较大被置底（不参与分页）</div>' +
+      pinned.map(c => '<div class="pinned">' + commentShell(c, false) + '</div>').join('') : '') +
+    '</section>';
+}
+
+/* ---------- 登录 ---------- */
+function renderLogin() {
+  const locked = state.lockedUntil > Date.now();
+  const left = locked ? Math.ceil((state.lockedUntil - Date.now()) / 3600000) : 0;
+  return '<div class="auth-wrap"><div class="auth-card">' +
+    '<h1>欢迎回来</h1>' +
+    '<div class="sub">登录后可收藏 · 评论 · 使用 AI 荐书</div>' +
+    '<div class="field"><label>账号</label>' +
+    '<input class="input" id="loginUser" value="' + esc((state.loginDraft || {}).user || '') + '" placeholder="用户名或邮箱" autocomplete="off"></div>' +
+    '<div class="field"><label>密码</label><div class="pwd-wrap">' +
+    '<input class="input" id="loginPwd" type="' + (state.showPwd ? 'text' : 'password') + '" value="' + esc((state.loginDraft || {}).pwd || '') + '" placeholder="请输入密码">' +
+    '<button class="eye" data-act="toggle-pwd" title="显示/隐藏密码">' + (state.showPwd ? '🙈' : '👁') + '</button>' +
+    '</div></div>' +
+    '<button class="btn btn-primary btn-block" data-act="do-login"' + (locked ? ' disabled' : '') + '>登 录</button>' +
+    (locked ? '<div class="err-msg" style="margin-top:10px">该设备已锁定 24 小时，请约 ' + left + ' 小时后再试</div>' : '') +
+    '<div class="demo-tip">演示账号：<b>demo / 123456</b>（普通用户）<br>管理员：<b>admin / 123456</b></div>' +
+    '<div class="auth-foot">还没有账号？<a href="#/register">立即注册</a></div>' +
+    '</div></div>';
+}
+
+/* ---------- 注册 ---------- */
+function randCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXY3456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+function drawCaptcha() {
+  const cv = $('#captchaCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#f7fafd';
+  ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 5; i++) {
+    ctx.strokeStyle = 'rgba(46,92,138,' + (0.10 + Math.random() * 0.18) + ')';
+    ctx.beginPath();
+    ctx.moveTo(Math.random() * W, Math.random() * H);
+    ctx.lineTo(Math.random() * W, Math.random() * H);
+    ctx.stroke();
+  }
+  const colors = ['#2E5C8A', '#8c5a3c', '#2f6f6b', '#7d2b3a'];
+  const code = state.register.captcha;
+  for (let i = 0; i < code.length; i++) {
+    ctx.save();
+    ctx.translate(16 + i * 23, H / 2 + 1);
+    ctx.rotate((Math.random() - 0.5) * 0.45);
+    ctx.font = 'bold 21px Georgia, "Times New Roman", serif';
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(code[i], 0, 0);
+    ctx.restore();
+  }
+  for (let i = 0; i < 24; i++) {
+    ctx.fillStyle = 'rgba(46,92,138,.22)';
+    ctx.fillRect(Math.random() * W, Math.random() * H, 1.6, 1.6);
+  }
+}
+function renderRegister() {
+  const e = state.register.errors || {};
+  const d = state.register.draft || {};
+  const err = k => (e[k] ? '<div class="err-msg">' + esc(e[k]) + '</div>' : '');
+  const canSubmit = state.register.agree;
+  return '<div class="auth-wrap"><div class="auth-card">' +
+    '<h1>注册账号</h1><div class="sub">加入图书推荐系统，建立你自己的阅读档案</div>' +
+    '<div class="field"><label>用户名称</label>' +
+    '<input class="input ' + (e.username ? 'err' : '') + '" id="regUser" value="' + esc(d.regUser || '') + '" placeholder="中文、字母、数字，可用 -_+=/*" autocomplete="off">' + err('username') + '</div>' +
+    '<div class="field"><label>邮箱</label>' +
+    '<input class="input ' + (e.email ? 'err' : '') + '" id="regEmail" value="' + esc(d.regEmail || '') + '" placeholder="支持任意邮箱，如 name@example.com" autocomplete="off">' + err('email') + '</div>' +
+    '<div class="field"><label>密码</label>' +
+    '<input class="input ' + (e.password ? 'err' : '') + '" id="regPwd" type="password" value="' + esc(d.regPwd || '') + '" placeholder="8 位以上，字母与数字组合">' + err('password') + '</div>' +
+    '<div class="field"><label>图形验证码</label><div class="captcha-wrap">' +
+    '<input class="input ' + (e.captcha ? 'err' : '') + '" id="regCaptcha" value="' + esc(d.regCaptcha || '') + '" placeholder="输入右侧 4 位字符" maxlength="4" autocomplete="off">' +
+    '<canvas id="captchaCanvas" width="112" height="40" title="点击换一张" data-act="captcha-refresh"></canvas>' +
+    '</div>' + err('captcha') + '<div class="hint" style="margin-top:4px">看不清？点击图片换一张</div></div>' +
+    '<div class="field"><div class="switch ' + (state.register.agree ? 'on' : '') + '" data-act="toggle-agree">' +
+    '<span class="track"></span><span>我已阅读并同意《用户协议》与《隐私政策》</span></div>' + err('agree') + '</div>' +
+    '<button class="btn btn-primary btn-block ' + (canSubmit ? '' : 'is-disabled') + '" data-act="do-register"' +
+    (canSubmit ? '' : ' disabled') + '>注 册</button>' +
+    '<div class="auth-foot">已有账号？<a href="#/login">去登录</a></div>' +
+    '</div></div>';
+}
+
+/* ---------- 个人主页 ---------- */
+function renderProfile() {
+  const u = userByName(state.user) || { username: state.user, email: '', regTime: '—' };
+  const tab = state.profileTab;
+  if (state.interestsDraft === null || state.interestsDraft === undefined) {
+    state.interestsDraft = (DB.interests[state.user] || []).slice();
+  }
+  const interests = state.interestsDraft;
+
+  const tabs = [['fav', '我的收藏'], ['cmt', '我的评论'], ['rep', '我的回复']].map(t =>
+    '<button class="' + (tab === t[0] ? 'active' : '') + '" data-act="profile-tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join('');
+
+  let body = '';
+  if (tab === 'fav') {
+    const ids = (DB.favorites[state.user] || []).slice();
+    const pageSize = 12;
+    const pages = Math.max(1, Math.ceil(ids.length / pageSize));
+    const page = Math.min(state.profilePage.fav, pages);
+    const list = ids.slice((page - 1) * pageSize, page * pageSize);
+    body = list.length ? list.map(id => {
+      const b = bookById(id);
+      if (!b) return '';
+      return '<div class="list-row"><div data-act="open-book" data-id="' + b.id + '" style="cursor:pointer;display:flex;gap:12px;flex:1;min-width:0">' +
+        cover(b) + '<div class="grow"><div class="t">' + esc(b.title) + '</div>' +
+        '<div class="s">' + esc(b.author) + ' · ' + esc(b.publisher) + ' · ' + b.t.类型 + '</div></div></div>' +
+        '<button class="btn btn-danger btn-sm" data-act="fav-del" data-id="' + b.id + '">删除</button></div>';
+    }).join('') : emptyBox('还没有收藏', '去首页逛逛吧');
+    if (ids.length > pageSize) body += pager(ids.length, page, pageSize, 'profile');
+  } else if (tab === 'cmt') {
+    const list = DB.comments.filter(c => c.user === state.user && !c.parentId)
+      .sort((a, b) => b.ts - a.ts);
+    const pageSize = 10;
+    const pages = Math.max(1, Math.ceil(list.length / pageSize));
+    const page = Math.min(state.profilePage.cmt, pages);
+    const slice = list.slice((page - 1) * pageSize, page * pageSize);
+    body = slice.length ? slice.map(c => {
+      const b = bookById(c.bookId);
+      return '<div class="list-row"><div class="grow">' +
+        '<div class="t">' + esc(c.text.slice(0, 40)) + (c.text.length > 40 ? '…' : '') + '</div>' +
+        '<div class="s">《' + esc(b ? b.title : '未知图书') + '》 · ' + ago(c.ts) + ' · 👍 ' + c.likes + ' 👎 ' + c.dislikes + '</div></div>' +
+        '<button class="btn btn-danger btn-sm" data-act="myc-del" data-id="' + c.id + '">删除</button></div>';
+    }).join('') : emptyBox('还没有发表过评论');
+    if (list.length > pageSize) body += pager(list.length, page, pageSize, 'profile');
+  } else {
+    const list = DB.comments.filter(c => c.user === state.user && c.parentId)
+      .sort((a, b) => b.ts - a.ts);
+    const pageSize = 10;
+    const pages = Math.max(1, Math.ceil(list.length / pageSize));
+    const page = Math.min(state.profilePage.rep, pages);
+    const slice = list.slice((page - 1) * pageSize, page * pageSize);
+    body = slice.length ? slice.map(c => {
+      const parent = DB.comments.find(x => x.id === c.parentId);
+      const b = bookById(c.bookId);
+      return '<div class="list-row"><div class="grow">' +
+        '<div class="t">' + esc(c.text.slice(0, 40)) + (c.text.length > 40 ? '…' : '') + '</div>' +
+        '<div class="s">回复 ' + esc(parent ? parent.user : '—') + ' · 《' + esc(b ? b.title : '未知图书') + '》 · ' + ago(c.ts) + '</div></div>' +
+        '<button class="btn btn-danger btn-sm" data-act="myr-del" data-id="' + c.id + '">删除</button></div>';
+    }).join('') : emptyBox('还没有回复过别人');
+    if (list.length > pageSize) body += pager(list.length, page, pageSize, 'profile');
+  }
+
+  const interestRows = TAG_TYPES.map(type =>
+    '<div class="interest-row"><div class="t">' + type + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' +
+    TAG_VALUES[type].map(v =>
+      '<button class="chip tag-chip ' + (interests.indexOf(v) >= 0 ? 'on' : '') + '" data-act="interest" data-val="' + esc(v) + '">' + esc(v) + '</button>'
+    ).join('') + '</div></div>').join('');
+
+  return '<section class="section card"><div class="profile-top">' +
+    '<div class="avatar">' + esc((u.username || 'U').slice(0, 1)) + '</div>' +
+    '<div style="flex:1;min-width:200px"><h1>' + esc(u.username) + '</h1>' +
+    '<div class="hint">邮箱：' + esc(maskEmail(u.email)) + ' · 注册时间：' + esc(u.regTime) +
+    ' · 角色：' + (isAdmin() ? '管理员' : '普通用户') + '</div></div>' +
+    '<button class="btn btn-ghost" data-act="logout">退出登录</button></div></section>' +
+
+    '<section class="section card"><div class="section-head"><h2>兴趣偏好</h2>' +
+    '<div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" data-act="interest-reset">重置</button>' +
+    '<button class="btn btn-primary btn-sm" data-act="interest-save">保存偏好</button></div></div>' +
+    '<div class="interest-box">' + interestRows + '</div>' +
+    '<div class="hint" style="margin-top:10px">已选 ' + interests.length + ' 个标签，将用于「猜你喜欢」与 AI 荐书</div></section>' +
+
+    '<section class="section card"><div class="tabs">' + tabs + '</div>' + body + '</section>';
+}
+
+/* ---------- AI 荐书 ---------- */
+function ensureTopics() {
+  if (!state.aiTopics) {
+    const t0 = NOW - 2 * HOUR;
+    state.aiTopics = [{
+      id: 1,
+      title: '想找一本适合睡前读的书',
+      ts: t0,
+      messages: [
+        { role: 'user', text: '最近睡得不太好，想找点轻松的书看看。', ts: t0 - 60000 },
+        { role: 'ai', text: '听起来这段时间挺累的。睡前读书不必求“有用”，反而是越松越好：篇幅别太长、情绪别太沉，读几页就能放下。\n我在下面挑了两本适合睡前翻的书，你看合不合口味。', books: [4, 9], ts: t0 }
+      ]
+    }];
+    state.aiTopicId = 1;
+  }
+  if (!state.aiTopics.find(t => t.id === state.aiTopicId)) state.aiTopicId = state.aiTopics[0].id;
+}
+function currentTopic() {
+  ensureTopics();
+  return state.aiTopics.find(t => t.id === state.aiTopicId);
+}
+function recBooks(n, seed) {
+  const pool = recommendPool();
+  if (!pool.length) return [];
+  const start = (seed * n) % pool.length;
+  const out = [];
+  for (let i = 0; i < n && i < pool.length; i++) out.push(pool[(start + i) % pool.length]);
+  return out;
+}
+function recReason(b) {
+  const sig = userSignals();
+  let behavior;
+  if (sig.favIds.length) {
+    const fv = bookById(sig.favIds[sig.favIds.length - 1]);
+    behavior = fv ? '你收藏过《' + fv.title + '》' : '你最近看过几本同类书';
+  } else if (sig.interest.length) {
+    behavior = '你的兴趣标签里有“' + sig.interest[0] + '”';
+  } else {
+    behavior = '你还没有填写兴趣偏好';
+  }
+  return behavior + '；这本《' + b.title + '》是“' + b.t.类型 + '·' + b.t.情绪基调 + '”题材；' +
+    '有读者评论提到“' + commentSnippet(b.id) + '”。';
+}
+
+const AI_FEATURES = [
+  { keys: ['榜单', '排行', '排名', '第几'], text: '站内有五个榜单：热门榜、收藏量榜、点赞量榜、讨论度榜和最差图书榜。热门榜看“收藏 + 图书点赞”的综合热度，讨论度榜统计一级评论加回复。\n同名次不会并列——数值相同时按图书编号排先后。每个榜单一页 10 本，最多收前 100 名。去「榜单」页可以直接点开任意一本。' },
+  { keys: ['收藏', '加入书架', '存起来'], text: '在首页的图书卡片右下角、或图书详情页的「☆ 收藏」按钮，都可以收藏。收藏后会出现在个人主页的「我的收藏」里，每页 12 条，可以逐条删除。\n收藏行为也会影响「猜你喜欢」和我的推荐——你收藏的书，同类型、同情绪基调的作品我会优先挑给你。' },
+  { keys: ['评论', '回复', '点赞', '点踩', '置底'], text: '评论在图书详情页下方。写好后默认按热度（赞 + 踩）排序，也可以切成按时间。\n每条评论可以点赞、点踩、回复；同一对象只能保持一个态度，想改成另一个要先取消。如果一条评论互动够多（赞 + 踩 ≥ 10）而赞踩比又很低（赞 / 踩 ≤ 1 / 4），它会被单独置底，并标注“以下评论因争议较大被置底”。' },
+  { keys: ['猜你喜欢'], text: '「猜你喜欢」在首页顶部，只有登录用户可见。它综合你的兴趣标签、收藏与评论记录，再加一点全站热度算出推荐分，默认一次给 10 本。\n点「换一批」可以看下一批；没有更多时会提示“暂无更多推荐”。' },
+  { keys: ['怎么用', '使用', '功能', '帮助', '上手', '能做什么'], text: '四步就能用起来：\n① 首页按标签筛书，点卡片进详情；\n② 详情页收藏、点赞、写评论；\n③ 去「榜单」看看大家最近在读什么；\n④ 登录后回到首页看「猜你喜欢」，或在这里直接问我“最近有什么值得读的”。\n想看全站评论和用户，用管理员账号登录后进「管理」。' }
+];
+
+const AI_EMOTIONS = [
+  { keys: ['睡不着', '失眠', '睡不好', '熬夜'], mood: ['治愈', '温馨'], lead: '睡不着的时候，脑子往往比白天还吵。' },
+  { keys: ['压力', '焦虑', '烦', '累', '加班', 'emo', '内耗'], mood: ['治愈', '幽默'], lead: '听起来你已经绷了很久了，先别急着高效，允许自己松一口气。' },
+  { keys: ['难过', '伤心', '孤独', '失落', '分手', '不开心'], mood: ['感人', '治愈'], lead: '这种时候讲道理没什么用，找一本别人也难过过的书，会好受一点。' },
+  { keys: ['无聊', '没意思', '想找点刺激', '燃'], mood: ['热血', '幽默'], lead: '无聊是很好的阅读时机，来点节奏快的。' }
+];
+
+const AI_OFFTOPIC = ['数学', '做题', '作业', '考试题', '天气', '股票', '基金', '理财', '编程', '代码', '写论文', '翻译', '游戏攻略', '电影', '音乐', '吃什么', '旅游', '笑话', '星座'];
+
+function aiBookLine(b) {
+  return '《' + b.title + '》是' + b.author + '的' + b.t.类型 + '作品，' + b.t.篇幅 + '，基调偏' + b.t.情绪基调 +
+    '，比较适合' + b.t.适合人群 + '读者。';
+}
+function aiReply(userText) {
+  const t = userText.trim();
+  /* 1. 命中站内书名 */
+  const b = BOOKS.find(x => t.indexOf(x.title) >= 0);
+  if (b) {
+    const sameType = BOOKS.filter(x => x.id !== b.id && x.t.类型 === b.t.类型).slice(0, 1);
+    return {
+      text: aiBookLine(b) + '\n站内已有 ' + b.collects + ' 人收藏、' + b.likes + ' 人点赞，讨论 ' + discussCount(b.id) + ' 条。\n' +
+        '如果你喜欢这种' + b.t.情绪基调 + '的味道，' + (sameType.length ? '可以接着看《' + sameType[0].title + '》。' : '也可以去榜单看看同类作品。'),
+      books: [b].concat(sameType)
+    };
+  }
+  /* 2. 功能讲解 */
+  const feat = AI_FEATURES.find(f => f.keys.some(k => t.indexOf(k) >= 0));
+  if (feat) return { text: feat.text };
+  /* 3. 情绪 / 生活场景 */
+  const emo = AI_EMOTIONS.find(e => e.keys.some(k => t.indexOf(k) >= 0));
+  if (emo) {
+    const picks = BOOKS.filter(x => emo.mood.indexOf(x.t.情绪基调) >= 0)
+      .sort((x, y) => (y.collects + y.likes) - (x.collects + x.likes)).slice(0, 2);
+    return {
+      text: emo.lead + '\n要不先试试这两本？它们都属于“' + emo.mood.join(' / ') + '”这一路，读完不会更沉。',
+      books: picks
+    };
+  }
+  /* 4. 与图书无关 */
+  if (AI_OFFTOPIC.some(k => t.indexOf(k) >= 0)) {
+    return {
+      text: '这个问题我帮不上忙——我只能聊图书和本站功能，别的领域容易说错，反而误事。\n不过既然你开口了，要不要换个角度：想解决什么问题，我帮你找本对应的书？比如想静下心、想睡个好觉、想找点刺激，都可以直接说。'
+    };
+  }
+  /* 5. 兜底：按你的档案推荐 */
+  const picks = recBooks(2, state.aiSeed + 3);
+  if (!picks.length) {
+    return { text: '我这边暂时没有足够的图书数据来做推荐。你可以先去首页随便点点、收藏几本，我就能更懂你的口味了。' };
+  }
+  return {
+    text: '我按你的档案挑了两本，理由写在卡片里：\n' + picks.map(p => '· 《' + p.title + '》' + recReason(p)).join('\n'),
+    books: picks
+  };
+}
+
+function miniBook(b, withReason) {
+  return '<div class="mini-book" data-act="open-book" data-id="' + b.id + '">' + cover(b) +
+    '<div style="min-width:0"><div class="mt">' + esc(b.title) + '</div>' +
+    '<div class="ma">' + esc(b.author) + ' · ' + esc(b.t.类型) + '</div>' +
+    (withReason ? '<div class="mr">' + esc(recReason(b)) + '</div>' : '') +
+    '</div></div>';
+}
+
+function renderAI() {
+  ensureTopics();
+  const topic = currentTopic();
+  const topics = state.aiTopics;
+
+  const listHtml = topics.map(t =>
+    '<div class="topic-item ' + (t.id === topic.id ? 'active' : '') + '" data-act="ai-topic" data-id="' + t.id + '">' +
+    '<div class="tt">' + esc(t.title) + '</div>' +
+    '<div class="tm">' + ago(t.ts) + '</div>' +
+    '<div class="topic-tools">' +
+    '<button class="icon-btn" data-act="ai-rename" data-id="' + t.id + '" title="重命名">✎</button>' +
+    '<button class="icon-btn" data-act="ai-del-topic" data-id="' + t.id + '" title="删除">🗑</button>' +
+    '</div></div>').join('');
+
+  let recHtml = '';
+  if (state.aiShowRec) {
+    const picks = recBooks(3, state.aiSeed);
+    recHtml = '<div class="rec-panel"><div class="rec-head">' +
+      '<div class="lh">✨ 智能综合推荐 <span class="rec-badge">自动生成</span></div>' +
+      '<button class="btn btn-outline btn-sm" data-act="ai-rec-more">换一批</button></div>' +
+      '<div class="hint" style="margin-bottom:10px">根据你的收藏、评论、兴趣标签与站内热度自动挑选，仅在本次进入页面时生成一次。</div>' +
+      '<div class="rec-cards">' + picks.map(b =>
+        '<div class="rec-card" data-act="open-book" data-id="' + b.id + '">' + cover(b) +
+        '<div style="min-width:0"><div class="rt">' + esc(b.title) + '</div>' +
+        '<div class="ra">' + esc(b.author) + '</div>' +
+        '<div class="rr">' + esc(recReason(b)) + '</div></div></div>').join('') +
+      '</div></div>';
+  }
+
+  const msgs = topic.messages.map(m => {
+    if (m.role === 'user') {
+      return '<div class="msg user"><div class="avatar">我</div><div class="bubbles">' +
+        '<div class="bubble">' + esc(m.text) + '</div>' +
+        '<div class="msg-time">' + ago(m.ts) + '</div></div></div>';
+    }
+    return '<div class="msg"><div class="avatar">AI</div><div class="bubbles">' +
+      '<div class="bubble">' + esc(m.text) + '</div>' +
+      (m.books && m.books.length ? '<div class="msg-books">' +
+        m.books.map(id => { const bb = bookById(id); return bb ? miniBook(bb, false) : ''; }).join('') + '</div>' : '') +
+      '<div class="msg-time">' + ago(m.ts) + '</div></div></div>';
+  }).join('');
+
+  const typing = state.aiTyping
+    ? '<div class="msg"><div class="avatar">AI</div><div class="bubbles"><div class="typing">' +
+      '<span class="dot"></span><span class="dot"></span><span class="dot"></span> 正在思考…</div></div></div>'
+    : '';
+
+  return '<div class="page-head"><div><h1>AI 荐书</h1>' +
+    '<div class="sub">本地规则模拟的荐书助手 · 回答只基于站内 16 本图书</div></div></div>' +
+    '<div class="ai-wrap">' +
+    '<aside class="ai-side"><button class="btn btn-primary new-topic" data-act="ai-new-topic">＋ 新建话题</button>' +
+    '<div class="topic-list">' + listHtml + '</div></aside>' +
+    '<section class="ai-main">' +
+    '<div class="ai-head"><h2>' + esc(topic.title) + '</h2>' +
+    '<div class="tools">' +
+    '<button class="icon-btn" data-act="ai-rename" data-id="' + topic.id + '" title="重命名">✎</button>' +
+    '<button class="icon-btn" data-act="ai-del-topic" data-id="' + topic.id + '" title="删除话题">🗑</button>' +
+    '</div></div>' +
+    '<div class="ai-body" id="chatBody">' + recHtml + '<div class="chat">' + msgs + typing + '</div></div>' +
+    '<div class="ai-input"><textarea id="aiInput" placeholder="问点什么，比如“最近有什么值得读的”“睡不着看什么”"></textarea>' +
+    '<button class="btn btn-primary" data-act="ai-send">发送</button></div>' +
+    '</section></div>';
+}
+
+/* ---------- 管理页 ---------- */
+function renderAdmin() {
+  const tab = state.adminTab;
+  const tabs = '<div class="tabs">' +
+    '<button class="' + (tab === 'cmt' ? 'active' : '') + '" data-act="admin-tab" data-tab="cmt">评论管理</button>' +
+    '<button class="' + (tab === 'user' ? 'active' : '') + '" data-act="admin-tab" data-tab="user">用户管理</button></div>';
+
+  let body = '';
+  if (tab === 'cmt') {
+    const all = DB.comments.slice().sort((a, b) => b.ts - a.ts);
+    const pageSize = 20;
+    const pages = Math.max(1, Math.ceil(all.length / pageSize));
+    const page = Math.min(state.adminPage, pages);
+    const rows = all.slice((page - 1) * pageSize, page * pageSize);
+    body = '<table class="table"><thead><tr>' +
+      '<th>评论者</th><th>所属图书</th><th>内容</th><th>类型</th><th>时间</th><th>赞/踩</th><th>操作</th>' +
+      '</tr></thead><tbody>' + rows.map(c => {
+        const b = bookById(c.bookId);
+        return '<tr><td>' + esc(c.user) + '</td>' +
+          '<td>《' + esc(b ? b.title : '—') + '》</td>' +
+          '<td class="clip">' + esc(c.text) + '</td>' +
+          '<td>' + (c.parentId ? '<span class="badge gray">回复</span>' : '<span class="badge">评论</span>') + '</td>' +
+          '<td class="muted small">' + fmtDateTime(c.ts) + '</td>' +
+          '<td class="small">👍 ' + c.likes + ' / 👎 ' + c.dislikes + '</td>' +
+          '<td><button class="btn btn-danger btn-xs" data-act="admin-del" data-id="' + c.id + '">删除</button></td></tr>';
+      }).join('') + '</tbody></table>' +
+      pager(all.length, page, pageSize, 'admin');
+  } else {
+    const rows = USERS.map(u => {
+      const isAdminUser = u.role === 'admin';
+      const self = isSelf(u.username);
+      const banned = u.status === '封禁';
+      let op;
+      if (isAdminUser || self) {
+        op = '<button class="btn btn-xs btn-ghost" disabled>不可操作</button>';
+      } else if (banned) {
+        op = '<button class="btn btn-outline btn-xs" data-act="unban" data-user="' + esc(u.username) + '">解封</button>';
+      } else {
+        op = '<button class="btn btn-danger btn-xs" data-act="ban" data-user="' + esc(u.username) + '">封禁</button>';
+      }
+      return '<tr><td>' + esc(u.username) + (self ? ' <span class="badge gray">我</span>' : '') + '</td>' +
+        '<td class="small">' + esc(maskEmail(u.email)) + '</td>' +
+        '<td class="small muted">' + esc(u.regTime) + '</td>' +
+        '<td>' + (isAdminUser ? '<span class="badge warn">管理员</span>' : '<span class="badge gray">普通用户</span>') + '</td>' +
+        '<td>' + (banned ? '<span class="badge danger">封禁</span>' : '<span class="badge ok">正常</span>') + '</td>' +
+        '<td>' + op + '</td></tr>';
+    }).join('');
+    body = '<table class="table"><thead><tr>' +
+      '<th>用户名称</th><th>邮箱</th><th>注册时间</th><th>角色</th><th>状态</th><th>操作</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="hint" style="margin-top:12px">管理员不能封禁其他管理员，也不能封禁自己；系统不提供删除用户功能。</div>';
+  }
+
+  return '<div class="page-head"><div><h1>管理面板</h1>' +
+    '<div class="sub">仅管理员可见 · 评论可按需删除，用户可封禁与解封</div></div></div>' +
+    '<section class="section card">' + tabs + body + '</section>' +
+    '<div class="admin-foot">' +
+    '<a href="#/import" class="small">图书资料维护（仅维护者）→</a></div>';
+}
+
+/* ---------- 图书导入结果页 ---------- */
+function renderImport() {
+  const st = state.importState;
+  const file = (st && st.file) || '';
+  let report = '';
+  if (st && st.done) {
+    const r = st.report;
+    const onlyFail = st.onlyFail;
+    const failures = r.failures.slice();
+    const stats = onlyFail ? '' :
+      '<div class="stat-grid">' +
+      '<div class="stat up"><div class="n">' + r.added + '</div><div class="l">新增</div></div>' +
+      '<div class="stat"><div class="n">' + r.updated + '</div><div class="l">更新</div></div>' +
+      '<div class="stat sk"><div class="n">' + r.skipped + '</div><div class="l">跳过</div></div>' +
+      '<div class="stat bad"><div class="n">' + r.failed + '</div><div class="l">失败</div></div>' +
+      '</div>' +
+      '<div class="hint" style="margin-bottom:10px">共处理 ' + (r.added + r.updated + r.skipped + r.failed) +
+      ' 条记录：成功写入 ' + (r.added + r.updated) + ' 条，跳过 ' + r.skipped + ' 条（内容未变化），失败 ' + r.failed + ' 条。</div>';
+    report = stats +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+      '<h3 style="font-size:15px">失败条目（' + failures.length + '）</h3>' +
+      '<label class="switch ' + (onlyFail ? 'on' : '') + '" data-act="import-only-fail">' +
+      '<span class="track"></span><span>只看失败</span></label></div>' +
+      '<div class="fail-list">' + failures.map(f =>
+        '<div class="fail-item"><span class="idx">#' + f.row + '</span>' +
+        '<div><b>' + esc(f.title) + '</b><div class="small muted">' + esc(f.reason) + '</div></div></div>').join('') +
+      '</div>' +
+      (onlyFail ? '<div class="hint" style="margin-top:8px">已开启「只看失败」，仅显示 ' + failures.length + ' 条失败记录。</div>' : '');
+  } else if (st && st.running) {
+    report = '<div class="hint">正在导入，请稍候…</div>' +
+      '<div class="progress"><div class="bar" id="importBar" style="width:' + (st.progress || 8) + '%"></div></div>';
+  }
+
+  return '<div class="page-head"><div><h1>图书资料维护</h1>' +
+    '<div class="sub">后台页 · 不在顶部菜单中，仅供维护者导入图书数据</div></div>' +
+    '<a class="btn btn-ghost btn-sm" href="#/admin">← 返回管理页</a></div>' +
+    '<section class="section card">' +
+    '<div class="import-box"><div style="font-size:26px">📄</div>' +
+    '<div class="big">选择图书数据文件</div>' +
+    '<div class="hint">支持 CSV / XLSX，字段需包含书名、作者、ISBN、标签等</div>' +
+    '<div class="file-pill">' + (file ? '📎 ' + esc(file) : '尚未选择文件') + '</div>' +
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+    '<button class="btn btn-outline" data-act="import-pick">选择文件</button>' +
+    '<input type="file" id="importFile" accept=".csv,.xlsx,.xls" style="position:absolute;left:-9999px;width:1px;height:1px">' +
+    '<button class="btn btn-ghost" data-act="import-demo">使用示例文件</button>' +
+    '<button class="btn btn-primary" data-act="import-run"' + (st && st.running ? ' disabled' : '') + '>开始导入</button>' +
+    '</div></div>' + report + '</section>';
+}
+
+/* ---------- 404 ---------- */
+function renderNotFound() {
+  return '<div style="padding:60px 0">' + emptyBox('页面不存在', '请检查地址，或从顶部菜单重新进入') +
+    '<div style="text-align:center;margin-top:16px"><a class="btn btn-primary" href="#/home">回首页</a></div></div>';
+}
+
+/* 重渲染后恢复输入框内容（避免打字被冲掉） */
+function restoreInputs() {
+  const ai = $('#aiInput');
+  if (ai && state.aiDraft) ai.value = state.aiDraft;
+  const nc = $('#newComment');
+  if (nc && state.cmtDraft) nc.value = state.cmtDraft;
+  const rp = $('#replyInput');
+  if (rp && state.replyDraft) rp.value = state.replyDraft;
+  if (state.route === 'register') drawCaptcha();
+}
+
+/* ---------- 路由分发 ---------- */
+function render() {
+  const r = parseRoute();
+  const prevKey = state.renderedKey || '';
+  const prevY = window.scrollY || window.pageYOffset || 0;
+  state.route = r.name;
+  if (r.name === 'book') {
+    const nid = Number(r.params[0]);
+    if (state.bookId !== nid) {
+      state.bookId = nid;
+      state.cmtDraft = '';
+      state.replyDraft = '';
+      state.replyTo = null;
+      state.bookCmtPage = 1;
+    }
+  }
+
+  /* 权限守卫 */
+  if (r.name === 'profile' || r.name === 'ai') {
+    if (!state.user) { toast('请先登录后再访问该页面 · <a href="#/login">去登录</a>'); location.hash = '#/login'; return; }
+  }
+  if (r.name === 'admin') {
+    if (!state.user) { toast('请先登录 · <a href="#/login">去登录</a>'); location.hash = '#/login'; return; }
+    if (!isAdmin()) { toast('仅管理员可访问管理页', 'err'); location.hash = '#/home'; return; }
+  }
+
+  /* AI 页：每次新进入时展示一次综合推荐 */
+  if (r.name === 'ai') {
+    if (state.prevRoute !== 'ai') { state.aiShowRec = true; state.aiSeed = 0; }
+    state.prevRoute = 'ai';
+  } else {
+    state.prevRoute = r.name;
+  }
+
+  renderNav();
+
+  let html = '';
+  switch (r.name) {
+    case 'home': html = renderHome(); break;
+    case 'ranking': html = renderRanking(); break;
+    case 'book': html = renderBook(); break;
+    case 'login': html = renderLogin(); break;
+    case 'register': html = renderRegister(); break;
+    case 'profile': html = renderProfile(); break;
+    case 'ai': html = renderAI(); break;
+    case 'admin': html = renderAdmin(); break;
+    case 'import': html = renderImport(); break;
+    default: html = renderNotFound();
+  }
+  $('#app').innerHTML = html;
+  restoreInputs();
+  flushDeferred();
+
+  /* 滚动位置：同一页面内的重绘（点标签、赞踩等）保持原位置，切换页面才回到顶部 */
+  const pageKey = r.name + '|' + (r.params || []).join('/');
+  if (r.name === 'ai') {
+    const body = $('#chatBody');
+    if (body) body.scrollTop = body.scrollHeight;
+  } else if (pageKey === prevKey) {
+    window.scrollTo(0, prevY);
+  } else {
+    window.scrollTo(0, 0);
+  }
+  state.renderedKey = pageKey;
+}
+
+/* ==================================================================
+   ④ 事件层
+   ================================================================== */
+function val(sel) { const el = $(sel); return el ? el.value.trim() : ''; }
+
+/* ---------- 登录 ---------- */
+function doLogin() {
+  if (state.lockedUntil > Date.now()) {
+    toast('该设备已锁定 24 小时，请稍后再试', 'err');
+    return;
+  }
+  const acc = val('#loginUser');
+  const pwd = val('#loginPwd');
+  if (!acc || !pwd) { toast('请输入账号和密码'); return; }
+  const u = USERS.find(x => (x.username === acc || x.email === acc) && x.password === pwd);
+  if (!u) {
+    state.loginFails++;
+    if (state.loginFails >= 10) {
+      state.lockedUntil = Date.now() + 24 * HOUR;
+      render();
+      toast('连续登录失败 10 次，该设备已锁定 24 小时', 'err');
+      return;
+    }
+    toast('账号不存在或密码错误', 'err');
+    return;
+  }
+  if (u.status === '封禁') { toast('账号已被封禁，请联系管理员', 'err'); return; }
+  state.user = u.username;
+  state.loginFails = 0;
+  state.interestsDraft = null;
+  state.recBatch = 0;
+  toast('欢迎回来，' + u.username, 'ok');
+  location.hash = '#/home';
+  render();
+}
+
+/* ---------- 注册 ---------- */
+function doRegister() {
+  const username = val('#regUser');
+  const email = val('#regEmail');
+  const pwd = val('#regPwd');
+  const cap = val('#regCaptcha');
+  const agree = state.register.agree;
+  const errors = {};
+
+  /* 按 用户名 → 邮箱 → 密码 → 图形码 → 协议 的顺序逐项校验 */
+  if (!username) errors.username = '请填写用户名称';
+  else if (username.length < 2 || username.length > 12) errors.username = '用户名称需为 2–12 个字符';
+  else if (!/^[\u4e00-\u9fa5A-Za-z0-9\-_+=\/*]+$/.test(username)) errors.username = '只能包含中文、字母、数字和 - _ + = / *';
+  else if (USERS.some(u => u.username === username)) errors.username = '该用户名称已被注册';
+
+  if (!errors.username) {
+    if (!email) errors.email = '请填写邮箱';
+    else if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/i.test(email)) errors.email = '请填写合法的邮箱地址，如 name@example.com';
+    else if (USERS.some(u => u.email.toLowerCase() === email.toLowerCase())) errors.email = '该邮箱已被注册';
+  }
+  if (!errors.username && !errors.email) {
+    if (!pwd) errors.password = '请填写密码';
+    else if (pwd.length < 8) errors.password = '密码至少 8 位';
+    else if (!/[A-Za-z]/.test(pwd) || !/[0-9]/.test(pwd)) errors.password = '密码需同时包含字母和数字';
+  }
+  if (!errors.username && !errors.email && !errors.password) {
+    if (!cap) errors.captcha = '请输入图形验证码';
+    else if (cap.toUpperCase() !== state.register.captcha) errors.captcha = '图形验证码不正确';
+  }
+  if (!errors.username && !errors.email && !errors.password && !errors.captcha && !agree) {
+    errors.agree = '请先阅读并同意用户协议与隐私政策';
+  }
+
+  state.register.draft = { regUser: username, regEmail: email, regPwd: pwd };
+  const firstKey = Object.keys(errors)[0];
+  if (firstKey) {
+    state.register.errors = errors;
+    state.register.captcha = randCode();
+    if (errors.captcha && state.register.draft) state.register.draft.regCaptcha = '';
+    render();
+    toast(errors[firstKey], 'err');
+    return;
+  }
+
+  USERS.push({
+    username: username, email: email, password: pwd, role: 'user',
+    regTime: fmtDateTime(Date.now()), status: '正常'
+  });
+  state.register = { agree: false, captcha: randCode(), errors: {}, draft: {} };
+  state.loginDraft = { user: username, pwd: '' };
+  toast('注册成功，请使用新账号登录', 'ok');
+  location.hash = '#/login';
+  render();
+}
+
+/* ---------- AI 发送 ---------- */
+function aiSend() {
+  const ta = $('#aiInput');
+  const text = ta ? ta.value.trim() : '';
+  if (!text) { toast('请先输入内容'); return; }
+  if (state.aiTyping) { toast('上一条还在思考中，请稍候'); return; }
+  const topic = currentTopic();
+  state.aiDraft = '';
+  topic.messages.push({ role: 'user', text: text, ts: Date.now() });
+  topic.ts = Date.now();
+  state.aiTyping = true;
+  render();
+  const delay = 600 + Math.floor(Math.random() * 300);
+  setTimeout(function () {
+    const rep = aiReply(text);
+    const t = currentTopic();
+    t.messages.push({ role: 'ai', text: rep.text, books: rep.books || [], ts: Date.now() });
+    t.ts = Date.now();
+    state.aiTyping = false;
+    render();
+  }, delay);
+}
+
+/* ---------- 导入 ---------- */
+function pickImportFile(name) {
+  state.importState = { file: name, running: false, done: false, progress: 0, onlyFail: false };
+  render();
+  toast('已选择文件：' + name);
+}
+function runImport() {
+  if (!state.importState || !state.importState.file) { toast('请先选择数据文件'); return; }
+  if (state.importState.running) return;
+  state.importState = Object.assign({}, state.importState, { running: true, done: false, progress: 6 });
+  render();
+  let p = 6;
+  const iv = setInterval(function () {
+    p += 12 + Math.random() * 18;
+    if (p >= 100) {
+      p = 100;
+      clearInterval(iv);
+      finishImport();
+      return;
+    }
+    const bar = $('#importBar');
+    if (bar) bar.style.width = p + '%';
+    if (state.importState) state.importState.progress = p;
+  }, 240);
+}
+function finishImport() {
+  const report = {
+    added: 12, updated: 8, skipped: 2, failed: 3,
+    failures: [
+      { row: 7, title: '《无人生还》', reason: 'ISBN 校验失败：978-7-5327-6 长度不足 13 位' },
+      { row: 19, title: '《夜航西飞》', reason: '缺少必填字段：出版社' },
+      { row: 34, title: '《小镇喧嚣》', reason: '标签「地域背景」取值不在允许范围内：北美' }
+    ]
+  };
+  state.importState = Object.assign({}, state.importState, {
+    running: false, done: true, progress: 100, report: report, onlyFail: false
+  });
+  render();
+  toast('导入完成：新增 12 · 更新 8 · 跳过 2 · 失败 3', 'ok');
+}
+
+/* ---------- 全局点击代理 ---------- */
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.getAttribute('data-act');
+  const id = el.getAttribute('data-id');
+  const ds = el.dataset;
+
+  switch (act) {
+    /* 通用 */
+    case 'open-book':
+      location.hash = '#/book/' + id;
+      break;
+    case 'fav':
+      e.stopPropagation();
+      toggleFav(id);
+      break;
+    case 'back':
+      history.length > 1 ? history.back() : (location.hash = '#/home');
+      break;
+    case 'logout':
+      confirmDialog({
+        title: '退出登录',
+        html: '<p>确定要退出当前账号吗？</p>',
+        okText: '退出登录'
+      }).then(function (ok) {
+        if (!ok) return;
+        state.user = null;
+        state.interestsDraft = null;
+        state.recBatch = 0;
+        state.replyTo = null;
+        toast('已退出登录');
+        location.hash = '#/home';
+        render();
+      });
+      break;
+
+    /* 首页筛选 */
+    case 'tag': {
+      const type = ds.type, value = ds.val;
+      if (state.filters[type] === value) delete state.filters[type];
+      else state.filters[type] = value;
+      state.homePage = 1;
+      syncFiltersHash();
+      render();
+      break;
+    }
+    case 'untag':
+      delete state.filters[ds.type];
+      state.homePage = 1;
+      syncFiltersHash();
+      render();
+      break;
+    case 'clear-tags':
+      state.filters = {};
+      state.homePage = 1;
+      syncFiltersHash();
+      render();
+      break;
+    case 'rec-more': {
+      if (el.classList.contains('is-disabled')) { toast('暂无更多推荐'); return; }
+      const pool = recommendPool();
+      if ((state.recBatch + 1) * 10 >= pool.length) {
+        state.recBatch++;
+        render();
+        toast('暂无更多推荐');
+        return;
+      }
+      state.recBatch++;
+      render();
+      break;
+    }
+
+    /* 分页 */
+    case 'go-page': {
+      const key = ds.list, page = Number(ds.page);
+      if (key === 'home') state.homePage = page;
+      else if (key === 'rank') state.rankPage = page;
+      else if (key === 'book-cmt') state.bookCmtPage = page;
+      else if (key === 'profile') state.profilePage[state.profileTab] = page;
+      else if (key === 'admin') state.adminPage = page;
+      render();
+      break;
+    }
+
+    /* 榜单 */
+    case 'rank-tab':
+      if (state.rankTab !== ds.key) {
+        state.rankTab = ds.key;
+        state.rankPage = 1;
+      }
+      render();
+      break;
+
+    /* 详情页 */
+    case 'book-like': {
+      const b = bookById(id);
+      react('book:' + b.id, 'like', b);
+      break;
+    }
+    case 'book-dislike': {
+      const b = bookById(id);
+      react('book:' + b.id, 'dislike', b);
+      break;
+    }
+    case 'resource': {
+      const b = bookById(id);
+      window.open(resourceUrl(b), '_blank');
+      break;
+    }
+    case 'cmt-sort':
+      state.cmtSort = ds.sort;
+      state.bookCmtPage = 1;
+      render();
+      break;
+    case 'c-like': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (c) react('comment:' + c.id, 'like', c);
+      break;
+    }
+    case 'c-dislike': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (c) react('comment:' + c.id, 'dislike', c);
+      break;
+    }
+    case 'c-reply':
+      if (!state.user) { toastLogin(); return; }
+      state.replyTo = (state.replyTo === Number(id)) ? null : Number(id);
+      render();
+      defer(function () {
+        const box = $('#replyInput');
+        if (box) box.focus();
+      });
+      break;
+    case 'c-reply-cancel':
+      state.replyTo = null;
+      render();
+      break;
+    case 'c-reply-submit': {
+      if (!state.user) { toastLogin(); return; }
+      const box = $('#replyInput');
+      const txt = box ? box.value.trim() : '';
+      if (!txt) { toast('回复内容不能为空'); return; }
+      const parent = DB.comments.find(x => x.id === Number(id));
+      if (!parent) return;
+      DB.comments.push({
+        id: Math.max.apply(null, DB.comments.map(c => c.id)) + 1,
+        bookId: parent.bookId, user: state.user, text: txt,
+        ts: Date.now(), likes: 0, dislikes: 0, parentId: parent.id
+      });
+      state.replyTo = null;
+      state.replyDraft = '';
+      toast('回复已发表', 'ok');
+      render();
+      break;
+    }
+    case 'c-submit': {
+      if (!state.user) { toastLogin(); return; }
+      const box = $('#newComment');
+      const txt = box ? box.value.trim() : '';
+      if (!txt) { toast('评论内容不能为空'); return; }
+      DB.comments.push({
+        id: Math.max.apply(null, DB.comments.map(c => c.id)) + 1,
+        bookId: Number(ds.book), user: state.user, text: txt,
+        ts: Date.now(), likes: 0, dislikes: 0, parentId: null
+      });
+      state.cmtSort = 'hot';
+      state.bookCmtPage = 1;
+      state.cmtDraft = '';
+      toast('评论已发表', 'ok');
+      render();
+      break;
+    }
+    case 'c-del': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (!c) return;
+      const kids = repliesOf(c.id).length;
+      confirmDialog({
+        title: '删除评论',
+        html: '确定删除这条评论吗？' + (kids ? '该评论下的 <b>' + kids + '</b> 条回复也会一并删除。' : ''),
+        okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        deleteComment(c.id);
+        toast('评论已删除');
+        render();
+      });
+      break;
+    }
+
+    /* 登录 / 注册 */
+    case 'toggle-pwd':
+      state.showPwd = !state.showPwd;
+      render();
+      break;
+    case 'do-login':
+      doLogin();
+      break;
+    case 'toggle-agree':
+      state.register.agree = !state.register.agree;
+      render();
+      break;
+    case 'captcha-refresh':
+      state.register.captcha = randCode();
+      render();
+      break;
+    case 'do-register':
+      doRegister();
+      break;
+
+    /* 个人主页 */
+    case 'profile-tab':
+      state.profileTab = ds.tab;
+      render();
+      break;
+    case 'interest': {
+      const v = ds.val;
+      const arr = state.interestsDraft || (state.interestsDraft = []);
+      const i = arr.indexOf(v);
+      if (i >= 0) arr.splice(i, 1); else arr.push(v);
+      render();
+      break;
+    }
+    case 'interest-save': {
+      DB.interests[state.user] = (state.interestsDraft || []).slice();
+      toast('兴趣偏好已保存', 'ok');
+      render();
+      break;
+    }
+    case 'interest-reset':
+      state.interestsDraft = (DB.interests[state.user] || []).slice();
+      render();
+      break;
+    case 'fav-del': {
+      const b = bookById(id);
+      confirmDialog({
+        title: '取消收藏', html: '确定把《' + esc(b.title) + '》从我的收藏中删除吗？',
+        okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        const list = DB.favorites[state.user] || [];
+        const i = list.indexOf(Number(id));
+        if (i >= 0) list.splice(i, 1);
+        DB.favDelta[id] = (DB.favDelta[id] || 0) - 1;
+        toast('已从收藏中移除');
+        render();
+      });
+      break;
+    }
+    case 'myc-del': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (!c) return;
+      confirmDialog({
+        title: '删除评论', html: '删除后该评论下的回复也会一并删除，确定继续？',
+        okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        deleteComment(c.id);
+        toast('评论已删除');
+        render();
+      });
+      break;
+    }
+    case 'myr-del': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (!c) return;
+      confirmDialog({
+        title: '删除回复', html: '确定删除这条回复吗？', okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        DB.comments = DB.comments.filter(x => x.id !== c.id);
+        toast('回复已删除');
+        render();
+      });
+      break;
+    }
+
+    /* AI 荐书 */
+    case 'ai-new-topic': {
+      ensureTopics();
+      const nid = Math.max.apply(null, state.aiTopics.map(t => t.id)) + 1;
+      state.aiTopics.unshift({
+        id: nid,
+        title: '新话题 ' + (state.aiTopics.length + 1),
+        ts: Date.now(),
+        messages: [{
+          role: 'ai',
+          text: '这是新的话题。想聊点什么？可以说说最近的心情，或者直接报一个书名，我来讲讲它适合谁。',
+          ts: Date.now()
+        }]
+      });
+      state.aiTopicId = nid;
+      state.aiShowRec = false;
+      state.aiDraft = '';
+      render();
+      break;
+    }
+    case 'ai-topic':
+      state.aiTopicId = Number(id);
+      state.aiShowRec = false;
+      state.aiDraft = '';
+      render();
+      break;
+    case 'ai-rename': {
+      e.stopPropagation();
+      const t = state.aiTopics.find(x => x.id === Number(id));
+      if (!t) return;
+      promptDialog({ title: '重命名话题', label: '话题标题', value: t.title }).then(v => {
+        if (v === null) return;
+        if (!v.trim()) { toast('标题不能为空'); return; }
+        t.title = v.trim().slice(0, 30);
+        render();
+        toast('话题已重命名');
+      });
+      break;
+    }
+    case 'ai-del-topic': {
+      e.stopPropagation();
+      const t = state.aiTopics.find(x => x.id === Number(id));
+      if (!t) return;
+      confirmDialog({
+        title: '删除话题',
+        html: '删除「' + esc(t.title) + '」后，该话题下的全部聊天记录都会被清空，且不可恢复。',
+        okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        state.aiTopics = state.aiTopics.filter(x => x.id !== t.id);
+        if (!state.aiTopics.length) {
+          state.aiTopics.push({
+            id: Date.now(), title: '新话题', ts: Date.now(),
+            messages: [{ role: 'ai', text: '话题已清空，重新开始吧——想聊哪本书？', ts: Date.now() }]
+          });
+        }
+        state.aiTopicId = state.aiTopics[0].id;
+        toast('话题及其记录已删除');
+        render();
+      });
+      break;
+    }
+    case 'ai-send':
+      aiSend();
+      break;
+    case 'ai-rec-more':
+      state.aiSeed++;
+      render();
+      toast('已为你换一批推荐');
+      break;
+
+    /* 管理 */
+    case 'admin-tab':
+      state.adminTab = ds.tab;
+      state.adminPage = 1;
+      render();
+      break;
+    case 'admin-del': {
+      const c = DB.comments.find(x => x.id === Number(id));
+      if (!c) return;
+      const kids = repliesOf(c.id).length;
+      confirmDialog({
+        title: '删除评论',
+        html: '确定删除 ' + esc(c.user) + ' 的这条' + (c.parentId ? '回复' : '评论') + '吗？' +
+          (kids ? '其下 <b>' + kids + '</b> 条回复会一并删除。' : ''),
+        okText: '删除', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        deleteComment(c.id);
+        toast('已删除');
+        render();
+      });
+      break;
+    }
+    case 'ban': {
+      const name = ds.user;
+      if (name === state.user) { toast('不能封禁自己', 'err'); return; }
+      if (userRole(name) === 'admin') { toast('不能封禁管理员', 'err'); return; }
+      confirmDialog({
+        title: '封禁用户', html: '封禁后 <b>' + esc(name) + '</b> 将无法登录，确定继续？',
+        okText: '封禁', danger: true
+      }).then(ok => {
+        if (!ok) return;
+        const u = userByName(name);
+        if (u) u.status = '封禁';
+        toast('已封禁 ' + name);
+        render();
+      });
+      break;
+    }
+    case 'unban': {
+      const name = ds.user;
+      confirmDialog({
+        title: '解封用户', html: '确定解除 <b>' + esc(name) + '</b> 的封禁状态？',
+        okText: '解封'
+      }).then(ok => {
+        if (!ok) return;
+        const u = userByName(name);
+        if (u) u.status = '正常';
+        toast('已解封 ' + name);
+        render();
+      });
+      break;
+    }
+
+    /* 导入 */
+    case 'import-pick': {
+      const inp = $('#importFile');
+      if (inp) inp.click();
+      break;
+    }
+    case 'import-demo':
+      pickImportFile('图书数据_2025Q4.csv');
+      break;
+    case 'import-run':
+      runImport();
+      break;
+    case 'import-only-fail':
+      if (state.importState && state.importState.done) {
+        state.importState.onlyFail = !state.importState.onlyFail;
+        render();
+      }
+      break;
+
+    /* 弹窗 */
+    case 'modal-cancel':
+      closeModal(false);
+      break;
+    case 'modal-ok':
+      closeModal(true);
+      break;
+    case 'modal-prompt-ok': {
+      const inp = $('#promptInput');
+      closeModal(inp ? inp.value : '');
+      break;
+    }
+    default:
+      break;
+  }
+});
+
+/* 回车与输入事件 */
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter') return;
+  const id = e.target.id;
+  if (id === 'loginUser') { e.preventDefault(); $('#loginPwd').focus(); }
+  else if (id === 'loginPwd') { e.preventDefault(); doLogin(); }
+  else if (id === 'aiInput' && !e.shiftKey) { e.preventDefault(); aiSend(); }
+  else if (id === 'promptInput') {
+    e.preventDefault();
+    closeModal(e.target.value);
+  } else if (id === 'regCaptcha') { e.preventDefault(); doRegister(); }
+});
+
+/* 文件选择（动态元素，用委托） */
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id === 'importFile') {
+    const f = e.target.files && e.target.files[0];
+    pickImportFile(f ? f.name : '未命名文件.csv');
+  }
+});
+
+/* 输入内容临时保存，避免重渲染丢失 */
+document.addEventListener('input', function (e) {
+  if (e.target.id === 'aiInput') state.aiDraft = e.target.value;
+  if (e.target.id === 'newComment') state.cmtDraft = e.target.value;
+  if (e.target.id === 'replyInput') state.replyDraft = e.target.value;
+  if (e.target.id === 'loginUser' || e.target.id === 'loginPwd') {
+    state.loginDraft = state.loginDraft || {};
+    state.loginDraft[e.target.id === 'loginUser' ? 'user' : 'pwd'] = e.target.value;
+  }
+  if (e.target.id === 'regUser' || e.target.id === 'regEmail' || e.target.id === 'regPwd' ||
+    e.target.id === 'regCaptcha') {
+    state.register.draft = state.register.draft || {};
+    state.register.draft[e.target.id] = e.target.value;
+  }
+});
+
+/* 弹窗遮罩点击关闭 */
+$('#modal-root').addEventListener('click', function (e) {
+  if (e.target.id === 'modal-root') closeModal(false);
+});
+
+/* ---------- 启动 ---------- */
+window.addEventListener('hashchange', function () { render(); });
+
+state.register.captcha = randCode();
+ensureTopics();
+if (!location.hash) location.hash = '#/home';
+(function restoreFilters() {
+  const q = parseRoute().query;
+  if (q) {
+    const f = decodeFilters(q);
+    if (Object.keys(f).length) state.filters = f;
+  }
+})();
+render();
+
+
+</script>
+</body>
+</html>

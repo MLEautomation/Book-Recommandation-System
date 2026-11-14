@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<form class="auth panel" id="loginForm"><h1>登录</h1><label>用户名或邮箱<input name="account" required></label><label>密码<input name="password" type="password" required></label><button>登录</button><p>还没有账号？<a href="/register">立即注册</a></p></form>{% endblock %}{% block scripts %}<script>window.BRS.page='login';</script>{% endblock %}
