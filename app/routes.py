@@ -4,6 +4,7 @@ import math
 import os
 import re
 import secrets
+from collections import Counter
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import (
@@ -34,6 +35,18 @@ from .models import (
 
 pages = Blueprint("pages", __name__)
 api = Blueprint("api", __name__)
+
+
+RECOMMEND_TAG_TYPE_WEIGHTS = {
+    "类型": 1.25,
+    "情绪基调": 1.15,
+    "地域背景": 1.0,
+    "语言": 0.85,
+    "发行时间": 0.65,
+    "篇幅": 0.6,
+    "适合人群": 0.45,
+}
+LOW_SIGNAL_TAG_NAMES = {"通用", "其他"}
 
 
 @pages.get("/")
@@ -170,6 +183,12 @@ def comment_json(c):
         "likes": sum(a.attitude_type == 1 for a in attitudes),
         "dislikes": sum(a.attitude_type == 2 for a in attitudes),
     }
+
+
+def recommend_tag_weight(tag):
+    if tag.name in LOW_SIGNAL_TAG_NAMES:
+        return 0.2
+    return RECOMMEND_TAG_TYPE_WEIGHTS.get(tag.tag_type.name, 1.0)
 
 
 @api.get("/session")
@@ -599,14 +618,20 @@ def my_replies():
 def recommend():
     u = current_user()
     offset = max(request.args.get("offset", 0, type=int), 0)
-    favorite_ids = {
-        x.book_id for x in db.session.query(Favorite).filter_by(user_id=u.id).all()
-    }
+    favorite_rows = (
+        db.session.query(Favorite)
+        .filter_by(user_id=u.id)
+        .order_by(Favorite.created_at.desc())
+        .all()
+    )
+    favorite_ids = {x.book_id for x in favorite_rows}
     interest_ids = {
         x.tag_id for x in db.session.query(UserInterest).filter_by(user_id=u.id).all()
     }
-    favorite_books = [db.session.get(Book, book_id) for book_id in favorite_ids]
-    favorite_tag_ids = {tag.id for book in favorite_books if book for tag in book.tags}
+    favorite_books = [db.session.get(Book, row.book_id) for row in favorite_rows]
+    favorite_tag_counts = Counter(
+        tag.id for book in favorite_books if book for tag in book.tags
+    )
     interacted_ids = {
         x.book_id for x in db.session.query(Comment).filter_by(user_id=u.id).all()
     }
@@ -614,9 +639,14 @@ def recommend():
     for book in db.session.query(Book).all():
         if book.id in favorite_ids:
             continue
-        tag_ids = {tag.id for tag in book.tags}
-        interest_score = len(tag_ids & interest_ids) * 3
-        favorite_tag_score = len(tag_ids & favorite_tag_ids) * 2
+        interest_score = sum(
+            5 * recommend_tag_weight(tag) for tag in book.tags if tag.id in interest_ids
+        )
+        favorite_tag_score = sum(
+            2.5 * favorite_tag_counts.get(tag.id, 0) * recommend_tag_weight(tag)
+            for tag in book.tags
+            if tag.id in favorite_tag_counts
+        )
         behavior_score = 0
         if book.id in interacted_ids:
             behavior_score += 1
