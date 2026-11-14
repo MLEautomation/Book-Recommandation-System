@@ -1,5 +1,21 @@
 import { request, escapeHtml } from "./api.js";
 
+function bookMetaMarkup(book) {
+  const tags = Object.fromEntries(
+    (book.tags || []).map((tag) => [tag.type, tag.name]),
+  );
+  return [
+    ["类型", tags["类型"]],
+    ["篇幅", tags["篇幅"] && tags["篇幅"] !== "未标注" ? tags["篇幅"] : ""],
+  ]
+    .filter(([, value]) => value)
+    .map(
+      ([label, value]) =>
+        `<div class="book-meta-row"><span>${label}：</span>${escapeHtml(value)}</div>`,
+    )
+    .join("");
+}
+
 async function loadFavorites(page = 1) {
   const data = await request(`/me/favorites?page=${page}`);
   const target = document.querySelector("#favoriteBooks");
@@ -8,7 +24,7 @@ async function loadFavorites(page = 1) {
       .map(
         (book) => `<article class="favorite-record">
     <a href="/book/${book.id}">${book.cover_path ? `<img src="${escapeHtml(book.cover_path)}" alt="${escapeHtml(book.title)}封面">` : `<div class="comment-book-cover">${escapeHtml(book.title.slice(0, 1))}</div>`}</a>
-    <div class="favorite-info"><a href="/book/${book.id}"><strong>${escapeHtml(book.title)}</strong></a><div class="muted">${escapeHtml(book.author)}</div><div>${book.tags.map((tag) => `<span class="chip-sm">${escapeHtml(tag.name)}</span>`).join(" ")}</div></div>
+    <div class="favorite-info"><a href="/book/${book.id}"><strong>${escapeHtml(book.title)}</strong></a><div class="muted">${escapeHtml(book.author)}</div><div class="book-meta">${bookMetaMarkup(book)}</div></div>
     <button class="btn btn-danger btn-xs" data-remove-favorite="${book.id}">取消收藏</button>
   </article>`,
       )

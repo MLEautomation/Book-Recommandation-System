@@ -10,6 +10,8 @@
 4. 执行 `python scripts/import_books.py`
 5. 执行 `python run.py`
 
+`import_books.py` 会读取 `data/import/zhangyue_books.json`，按原始 `category` 建立“类型”标签，并生成 `data/import/zhangyue_books_classified.json`。当前筛选标签包括类型、发售时间、篇幅和地域背景。
+
 默认演示账号为 `admin / Admin1234` 和 `demo / Demo1234`。
 
 ## 抓取公开图书元数据

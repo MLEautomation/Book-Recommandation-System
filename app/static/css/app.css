@@ -242,6 +242,18 @@ main {
   color: var(--muted);
   font-size: 13px;
 }
+.book-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 36px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.book-meta-row span {
+  color: var(--muted);
+}
 .cover {
   position: relative;
   display: flex;

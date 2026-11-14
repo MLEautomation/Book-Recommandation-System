@@ -30,6 +30,21 @@ const coverMarkup = (book) => {
     : "";
   return `<div class="cover">${url ? `<img src="${esc(url)}" alt="${esc(book.title)}封面" loading="lazy">` : ""}<span class="init">${esc(book.title.slice(0, 1))}</span></div>`;
 };
+const bookMetaMarkup = (book) => {
+  const tags = Object.fromEntries(
+    (book.tags || []).map((tag) => [tag.type, tag.name]),
+  );
+  return [
+    ["类型", tags["类型"]],
+    ["篇幅", tags["篇幅"] && tags["篇幅"] !== "未标注" ? tags["篇幅"] : ""],
+  ]
+    .filter(([, value]) => value)
+    .map(
+      ([label, value]) =>
+        `<div class="book-meta-row"><span>${label}：</span>${esc(value)}</div>`,
+    )
+    .join("");
+};
 async function toggleFavorite(button) {
   const bookId = Number(button.dataset.fav);
   const isFavorite = button.dataset.favorite === "true";
@@ -178,12 +193,7 @@ function renderBooks(b) {
   document.querySelector("#books").innerHTML = b.items
     .map(
       (x) =>
-        `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div><div class="btags">${x.tags
-          .slice(0, 3)
-          .map((y) => `<span class="chip-sm">${esc(y.name)}</span>`)
-          .join(
-            "",
-          )}</div><div class="bfoot"><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></div></article>`,
+        `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div><div class="book-meta">${bookMetaMarkup(x)}</div><div class="bfoot"><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></div></article>`,
     )
     .join("");
   document.querySelector("#bookTotal").textContent = `共 ${b.total} 本`;
@@ -198,7 +208,7 @@ async function loadRecommendations() {
     r.items
       .map(
         (x) =>
-          `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></article>`,
+          `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div><div class="book-meta">${bookMetaMarkup(x)}</div><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></article>`,
       )
       .join("") || '<div class="empty">暂无更多推荐</div>';
   document.querySelector("#recommendMore").disabled =

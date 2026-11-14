@@ -38,15 +38,12 @@ api = Blueprint("api", __name__)
 
 
 RECOMMEND_TAG_TYPE_WEIGHTS = {
-    "类型": 1.25,
-    "情绪基调": 1.15,
+    "类型": 1.3,
     "地域背景": 1.0,
-    "语言": 0.85,
-    "发行时间": 0.65,
-    "篇幅": 0.6,
-    "适合人群": 0.45,
+    "发售时间": 0.6,
+    "篇幅": 0.5,
 }
-LOW_SIGNAL_TAG_NAMES = {"通用", "其他"}
+LOW_SIGNAL_TAG_NAMES = {"通用", "其他", "未标注"}
 
 
 @pages.get("/")
@@ -214,7 +211,9 @@ def tags_api():
             {
                 "id": x.id,
                 "name": x.name,
-                "tags": [{"id": t.id, "name": t.name} for t in x.tags],
+                "tags": [
+                    {"id": t.id, "name": t.name} for t in x.tags if t.name != "未标注"
+                ],
             }
             for x in rows
         ]
