@@ -1,7 +1,31 @@
-{% extends 'base.html' %}{% block content %}
-<section class="hero">
-  <h1>发现下一本值得读的书</h1>
-  <p>按标签筛选图书，查看详情并参与讨论。</p>
+{% extends 'base.html' %} {% block content %}
+<section class="panel qa-panel">
+  <div class="section-head">
+    <div>
+      <h1>简单问答找书</h1>
+      <p class="muted">告诉我你想读什么，系统会从标签中提取偏好并生成推荐。</p>
+    </div>
+  </div>
+  <form id="qaForm" class="qa-form">
+    <textarea
+      id="qaPrompt"
+      rows="3"
+      maxlength="1000"
+      placeholder="例如：我想看历史背景浓厚、篇幅较长的中国作品"
+    ></textarea>
+    <div class="qa-form-footer">
+      <span class="muted">问答会参考当前标签集合进行匹配</span>
+      <button class="btn btn-primary" type="submit" id="qaSubmit">
+        开始推荐
+      </button>
+    </div>
+  </form>
+  <div id="qaStatus" class="muted"></div>
+  <div id="qaRecommendations" hidden>
+    <div class="section-head"><h2>问答推荐</h2></div>
+    <div id="qaKeywords" class="qa-keywords"></div>
+    <div id="qaBooks" class="book-grid"></div>
+  </div>
 </section>
 <section id="recommendSection" class="panel" hidden>
   <div class="section-head">
@@ -13,20 +37,12 @@
   </div>
   <div id="recommendBooks" class="book-grid"></div>
 </section>
-<section class="panel">
-  <div class="section-head"><h2>标签筛选</h2></div>
-  <div id="tags" class="filter-box">加载中…</div>
-</section>
-<section>
-  <div class="section-head">
-    <h2>图书列表</h2>
-    <span id="bookTotal"></span>
-  </div>
-  <div id="books" class="book-grid">加载中…</div>
-  <div id="pager"></div>
-</section>
-{% endblock %}{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
   window.BRS.page = "home";
 </script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/qa.js') }}"
+></script>
 {% endblock %}

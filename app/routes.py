@@ -17,6 +17,7 @@ from flask import (
     session,
     url_for,
 )
+from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 from .extensions import db
 from .models import (
@@ -32,6 +33,7 @@ from .models import (
     User,
     UserInterest,
 )
+from .ai_recommender import recommend_from_prompt
 
 pages = Blueprint("pages", __name__)
 api = Blueprint("api", __name__)
@@ -54,6 +56,7 @@ def home():
 @pages.get("/<page>")
 def page(page):
     allowed = {
+        "filters": "filters.html",
         "ranking": "ranking.html",
         "login": "login.html",
         "register": "register.html",
@@ -225,7 +228,18 @@ def books_api():
     page = max(request.args.get("page", 1, type=int), 1)
     size = min(max(request.args.get("size", 24, type=int), 1), 100)
     selected = [x for x in request.args.get("tags", "").split(",") if x]
+    search = request.args.get("q", "").strip()
     q = db.session.query(Book)
+    if search:
+        pattern = f"%{search}%"
+        q = q.filter(
+            or_(
+                Book.title.ilike(pattern),
+                Book.author.ilike(pattern),
+                Book.publisher.ilike(pattern),
+                Book.summary.ilike(pattern),
+            )
+        )
     for tag_id in selected:
         q = q.filter(Book.tags.any(Tag.id == int(tag_id)))
     total = q.distinct().count()
@@ -237,6 +251,21 @@ def books_api():
         total=total,
         pages=math.ceil(total / size) if total else 0,
     )
+
+
+@api.post("/qa/recommend")
+def qa_recommend():
+    data = request.get_json(silent=True) or {}
+    prompt = str(data.get("prompt") or "").strip()
+    if not prompt:
+        return jsonify(error="请输入想看的内容或偏好"), 400
+    try:
+        result = recommend_from_prompt(prompt)
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 503
+    except RuntimeError as exc:
+        return jsonify(error=str(exc)), 502
+    return jsonify(result)
 
 
 @api.get("/books/<int:book_id>")

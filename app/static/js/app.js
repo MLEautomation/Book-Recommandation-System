@@ -127,20 +127,8 @@ async function nav() {
   } catch (e) {}
 }
 async function home() {
-  const [t, s] = await Promise.all([api("/tags"), api("/session")]);
+  const s = await api("/session");
   const saved = readPageState().home || {};
-  document.querySelector("#tags").innerHTML = t.items
-    .map(
-      (x) =>
-        `<div class="filter-row"><span class="ftype">${esc(x.name)}</span><div class="filter-vals">${x.tags.map((y) => `<button class="chip" data-tag="${y.id}">${esc(y.name)}</button>`).join("")}</div></div>`,
-    )
-    .join("");
-  (saved.tags || []).forEach((id) => {
-    const tag = document.querySelector(`[data-tag="${id}"]`);
-    if (tag) tag.classList.add("active");
-  });
-  homePage = saved.page || 1;
-  await loadHomeBooks(homePage);
   if (s.user) {
     document.querySelector("#recommendSection").hidden = false;
     recommendOffset = saved.recommendOffset || 0;
@@ -150,13 +138,6 @@ async function home() {
       await loadRecommendations();
     };
   }
-  document.querySelectorAll("[data-tag]").forEach(
-    (x) =>
-      (x.onclick = () => {
-        x.classList.toggle("active");
-        homeFiltered();
-      }),
-  );
   if (saved.scrollY) setTimeout(() => window.scrollTo(0, saved.scrollY), 0);
 }
 function renderPager(page, pages) {

@@ -1,0 +1,39 @@
+{% extends 'base.html' %} {% block content %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <h1>图书筛选</h1>
+      <p class="muted">可同时选择多个标签，搜索结果会匹配全部已选标签。</p>
+    </div>
+  </div>
+  <form id="bookSearchForm" class="book-search">
+    <input
+      id="bookSearch"
+      type="search"
+      maxlength="100"
+      placeholder="搜索书名、作者、出版社或简介"
+    />
+    <button class="btn btn-primary" type="submit">搜索</button>
+    <button class="btn btn-outline" type="button" id="clearFilters">
+      清空条件
+    </button>
+  </form>
+  <div id="filterTags" class="filter-box">加载中…</div>
+</section>
+<section>
+  <div class="section-head">
+    <h2>筛选结果</h2>
+    <span id="filterTotal"></span>
+  </div>
+  <div id="filterBooks" class="book-grid">加载中…</div>
+  <div id="filterPager"></div>
+</section>
+{% endblock %} {% block scripts %}
+<script>
+  window.BRS.page = "filters";
+</script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/filters.js') }}"
+></script>
+{% endblock %}

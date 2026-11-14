@@ -14,6 +14,8 @@
 
 默认演示账号为 `admin / Admin1234` 和 `demo / Demo1234`。
 
+首页的简单问答使用 LangChain 调用 MiniMax。请在 `.env` 中填写 `MINIMAX_API_KEY` 和 `MINIMAX_BASE_URL`，模型名称通过 `MINIMAX_MODEL` 配置，默认值为 `MiniMax-M3`。推荐使用带 `/v1` 的 OpenAI 兼容接口地址。
+
 ## 抓取公开图书元数据
 
 掌阅分类页是动态页面，采集器使用 Playwright 的普通 DOM 解析，不需要 AI API、RAG 或模型密钥。首次使用需要在虚拟环境中安装浏览器运行时：

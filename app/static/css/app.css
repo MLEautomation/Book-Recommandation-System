@@ -142,6 +142,43 @@ main {
   background: #fff;
   box-shadow: var(--shadow);
 }
+.qa-panel {
+  border: 2px solid #d9e7f4;
+  background: linear-gradient(145deg, #ffffff, #f4f8fc);
+}
+.qa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qa-form textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+}
+.qa-form-footer,
+.book-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.qa-form-footer {
+  justify-content: space-between;
+}
+.qa-keywords {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.book-search {
+  margin-bottom: 18px;
+}
+.book-search input {
+  flex: 1;
+  min-width: 240px;
+}
 .section-head {
   display: flex;
   align-items: center;
