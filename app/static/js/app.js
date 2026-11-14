@@ -30,10 +30,28 @@ const coverMarkup = (book) => {
     : "";
   return `<div class="cover">${url ? `<img src="${esc(url)}" alt="${esc(book.title)}封面" loading="lazy">` : ""}<span class="init">${esc(book.title.slice(0, 1))}</span></div>`;
 };
+async function toggleFavorite(button) {
+  const bookId = Number(button.dataset.fav);
+  const isFavorite = button.dataset.favorite === "true";
+  try {
+    await api("/favorites", {
+      method: isFavorite ? "DELETE" : "POST",
+      body: JSON.stringify({ book_id: bookId }),
+    });
+    button.dataset.favorite = String(!isFavorite);
+    button.classList.toggle("on", !isFavorite);
+    button.textContent = !isFavorite ? "★ 已收藏" : "☆ 收藏";
+    toast(!isFavorite ? "已收藏" : "已取消收藏");
+  } catch (error) {
+    toast(error.message);
+  }
+}
 let homePage = 1;
 let recommendOffset = 0;
 let currentBookId = null;
 let currentCommentSort = "hot";
+let rankingType = "hot";
+let rankingPageNumber = 1;
 const stateStorageKey = "brs_page_state";
 function readPageState() {
   try {
@@ -74,6 +92,7 @@ async function nav() {
       loginLink.hidden = true;
       registerLink.hidden = true;
       profileLink.hidden = false;
+      favoritesLink.hidden = false;
       myCommentsLink.hidden = false;
       logoutBtn.hidden = false;
       if (d.user.role === 1) adminLink.hidden = false;
@@ -85,6 +104,7 @@ async function nav() {
       loginLink.hidden = false;
       registerLink.hidden = false;
       profileLink.hidden = true;
+      favoritesLink.hidden = true;
       myCommentsLink.hidden = true;
       adminLink.hidden = true;
       logoutBtn.hidden = true;
@@ -163,27 +183,14 @@ function renderBooks(b) {
           .map((y) => `<span class="chip-sm">${esc(y.name)}</span>`)
           .join(
             "",
-          )}</div><div class="bfoot"><button class="fav-btn" data-fav="${x.id}">☆ 收藏</button></div></article>`,
+          )}</div><div class="bfoot"><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></div></article>`,
     )
     .join("");
   document.querySelector("#bookTotal").textContent = `共 ${b.total} 本`;
   renderPager(b.page, b.pages);
-  document.querySelectorAll("[data-fav]").forEach(
-    (x) =>
-      (x.onclick = async () => {
-        try {
-          await api("/favorites", {
-            method: "POST",
-            body: JSON.stringify({ book_id: +x.dataset.fav }),
-          });
-          x.classList.add("on");
-          x.textContent = "★ 已收藏";
-          toast("已收藏");
-        } catch (e) {
-          toast(e.message);
-        }
-      }),
-  );
+  document.querySelectorAll("[data-fav]").forEach((button) => {
+    button.onclick = () => toggleFavorite(button);
+  });
 }
 async function loadRecommendations() {
   const r = await api("/recommend?offset=" + recommendOffset);
@@ -191,11 +198,14 @@ async function loadRecommendations() {
     r.items
       .map(
         (x) =>
-          `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div></article>`,
+          `<article class="bcard"><a href="/book/${x.id}">${coverMarkup(x)}</a><div class="btitle"><a href="/book/${x.id}">${esc(x.title)}</a></div><div class="bauthor">${esc(x.author)}</div><button class="fav-btn${x.is_favorite ? " on" : ""}" data-fav="${x.id}" data-favorite="${x.is_favorite}">${x.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button></article>`,
       )
       .join("") || '<div class="empty">暂无更多推荐</div>';
   document.querySelector("#recommendMore").disabled =
     recommendOffset + 10 >= r.total;
+  document.querySelectorAll("#recommendBooks [data-fav]").forEach((button) => {
+    button.onclick = () => toggleFavorite(button);
+  });
   saveCurrentPageState();
 }
 async function homeFiltered() {
@@ -235,13 +245,77 @@ async function register() {
   };
 }
 async function rankingPage() {
-  const d = await api("/ranking");
-  document.querySelector("#ranking").innerHTML = d.items
-    .map(
-      (x, i) =>
-        `<div class="list-row"><b>${i + 1}.</b> <a href="/book/${x.book.id}">${esc(x.book.title)}</a><span class="muted">　${x.metric}</span></div>`,
-    )
-    .join("");
+  const labels = {
+    hot: "按收藏量和点赞量综合排序",
+    favorite: "按收藏量排序",
+    like: "按点赞量排序",
+    discuss: "按评论数量排序",
+    worst: "按点踩量排序",
+  };
+  const metricLabels = {
+    hot: "热度",
+    favorite: "收藏",
+    like: "点赞",
+    discuss: "评论",
+    worst: "点踩",
+  };
+  const tabs = document.querySelectorAll("[data-ranking-type]");
+  const rankingBox = document.querySelector("#ranking");
+  const pagerBox = document.querySelector("#rankingPager");
+  const note = document.querySelector("#rankingNote");
+
+  function renderRankingPager(page, pages) {
+    if (!pages || pages <= 1) {
+      pagerBox.innerHTML = "";
+      return;
+    }
+    let html = `<div class="pager"><button class="btn btn-outline" data-ranking-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>上一页</button>`;
+    for (let i = 1; i <= pages; i += 1) {
+      if (i <= 3 || i > pages - 2 || Math.abs(i - page) <= 1) {
+        html += `<button class="btn btn-outline${i === page ? " active" : ""}" data-ranking-page="${i}">${i}</button>`;
+      }
+    }
+    html += `<button class="btn btn-outline" data-ranking-page="${page + 1}" ${page >= pages ? "disabled" : ""}>下一页</button></div>`;
+    pagerBox.innerHTML = html;
+    pagerBox.querySelectorAll("[data-ranking-page]").forEach((button) => {
+      button.onclick = () => {
+        if (!button.disabled) loadRanking(Number(button.dataset.rankingPage));
+      };
+    });
+  }
+
+  async function loadRanking(page = 1) {
+    rankingPageNumber = page;
+    rankingBox.textContent = "加载中…";
+    try {
+      const d = await api(
+        `/ranking?type=${encodeURIComponent(rankingType)}&page=${page}`,
+      );
+      note.textContent = `${labels[rankingType]}，共 ${d.total} 本图书`;
+      rankingBox.innerHTML = d.items.length
+        ? d.items
+            .map((item, index) => {
+              const rank = (d.page - 1) * 10 + index + 1;
+              return `<div class="list-row"><b>${rank}.</b><a href="/book/${item.book.id}">${esc(item.book.title)}</a><span class="muted">${metricLabels[rankingType]} ${item.metric}</span></div>`;
+            })
+            .join("")
+        : '<div class="empty">暂无榜单数据</div>';
+      renderRankingPager(d.page, d.pages);
+    } catch (error) {
+      rankingBox.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      pagerBox.innerHTML = "";
+    }
+  }
+
+  tabs.forEach((tab) => {
+    tab.onclick = () => {
+      rankingType = tab.dataset.rankingType;
+      rankingPageNumber = 1;
+      tabs.forEach((item) => item.classList.toggle("active", item === tab));
+      loadRanking(1);
+    };
+  });
+  await loadRanking(rankingPageNumber);
 }
 async function loadComments(bookId, sort = "hot") {
   currentCommentSort = sort;
@@ -319,7 +393,10 @@ async function bookPage() {
       ? "https:" + d.book.url
       : d.book.url
     : "";
-  root.innerHTML = `<div class="detail-top">${coverMarkup(d.book)}<div class="detail-info"><h1>${esc(d.book.title)}</h1><p>${esc(d.book.author)} · ${esc(d.book.publisher || "—")}</p><div class="tag-groups">${d.book.tags.map((x) => `<span class="chip-sm">${esc(x.type)} · ${esc(x.name)}</span>`).join(" ")}</div><p>${esc(d.book.summary || "暂无简介")}</p><div class="detail-actions"><button class="fav-btn" data-fav="${d.book.id}">☆ 收藏</button><button class="btn btn-outline${d.book.my_attitude === 1 ? " active like" : ""}" id="bookLike">赞 ${d.book.likes || 0}</button><button class="btn btn-outline${d.book.my_attitude === 2 ? " active dis" : ""}" id="bookDislike">踩 ${d.book.dislikes || 0}</button>${sourceUrl ? `<a class="btn btn-outline" href="${esc(sourceUrl)}" target="_blank" rel="noopener">访问原书页面</a>` : ""}</div></div></div>`;
+  root.innerHTML = `<div class="detail-top">${coverMarkup(d.book)}<div class="detail-info"><h1>${esc(d.book.title)}</h1><p>${esc(d.book.author)} · ${esc(d.book.publisher || "—")}</p><div class="tag-groups">${d.book.tags.map((x) => `<span class="chip-sm">${esc(x.type)} · ${esc(x.name)}</span>`).join(" ")}</div><p>${esc(d.book.summary || "暂无简介")}</p><div class="detail-actions"><button class="fav-btn${d.book.is_favorite ? " on" : ""}" data-fav="${d.book.id}" data-favorite="${d.book.is_favorite}">${d.book.is_favorite ? "★ 已收藏" : "☆ 收藏"}</button><button class="btn btn-outline${d.book.my_attitude === 1 ? " active like" : ""}" id="bookLike">赞 ${d.book.likes || 0}</button><button class="btn btn-outline${d.book.my_attitude === 2 ? " active dis" : ""}" id="bookDislike">踩 ${d.book.dislikes || 0}</button>${sourceUrl ? `<a class="btn btn-outline" href="${esc(sourceUrl)}" target="_blank" rel="noopener">访问原书页面</a>` : ""}</div></div></div>`;
+  document.querySelectorAll("#book [data-fav]").forEach((button) => {
+    button.onclick = () => toggleFavorite(button);
+  });
   document.querySelector("#bookLike").onclick = async () => {
     try {
       await api("/books/" + id + "/attitude", {

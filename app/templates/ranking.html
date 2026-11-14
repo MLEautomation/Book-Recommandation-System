@@ -1,14 +1,22 @@
-{% extends 'base.html' %}{% block content %}
-<h1>榜单</h1>
-<div class="tabs">
-  <button data-type="hot">热门榜</button
-  ><button data-type="favorite">收藏量榜</button
-  ><button data-type="like">点赞量榜</button
-  ><button data-type="discuss">讨论度榜</button
-  ><button data-type="worst">最差图书榜</button>
-</div>
-<div id="ranking" class="list">加载中…</div>
-{% endblock %}{% block scripts %}
+{% extends 'base.html' %} {% block content %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <h1>榜单</h1>
+      <span id="rankingNote" class="muted">按图书互动数据实时排序</span>
+    </div>
+  </div>
+  <div id="rankingTabs" class="tabs">
+    <button class="active" data-ranking-type="hot">热门榜</button>
+    <button data-ranking-type="favorite">收藏量榜</button>
+    <button data-ranking-type="like">点赞量榜</button>
+    <button data-ranking-type="discuss">讨论度榜</button>
+    <button data-ranking-type="worst">最差图书榜</button>
+  </div>
+  <div id="ranking" class="list">加载中…</div>
+  <div id="rankingPager"></div>
+</section>
+{% endblock %} {% block scripts %}
 <script>
   window.BRS.page = "ranking";
 </script>

@@ -48,6 +48,7 @@ def page(page):
         "login": "login.html",
         "register": "register.html",
         "profile": "profile.html",
+        "favorites": "favorites.html",
         "my-comments": "my_comments.html",
         "admin": "admin.html",
         "import": "import.html",
@@ -102,6 +103,7 @@ def book_json(book):
     )
     user_attitude = None
     user = current_user()
+    is_favorite = False
     if user:
         row = (
             db.session.query(BookAttitude)
@@ -109,6 +111,11 @@ def book_json(book):
             .first()
         )
         user_attitude = row.attitude_type if row else None
+        is_favorite = bool(
+            db.session.query(Favorite)
+            .filter_by(user_id=user.id, book_id=book.id)
+            .first()
+        )
     return {
         "id": book.id,
         "title": book.title,
@@ -126,6 +133,7 @@ def book_json(book):
         "likes": sum(a.attitude_type == 1 for a in book_attitudes),
         "dislikes": sum(a.attitude_type == 2 for a in book_attitudes),
         "my_attitude": user_attitude,
+        "is_favorite": is_favorite,
         "tags": [
             {"id": t.id, "type": t.tag_type.name, "name": t.name} for t in book.tags
         ],
@@ -597,6 +605,8 @@ def recommend():
     interest_ids = {
         x.tag_id for x in db.session.query(UserInterest).filter_by(user_id=u.id).all()
     }
+    favorite_books = [db.session.get(Book, book_id) for book_id in favorite_ids]
+    favorite_tag_ids = {tag.id for book in favorite_books if book for tag in book.tags}
     interacted_ids = {
         x.book_id for x in db.session.query(Comment).filter_by(user_id=u.id).all()
     }
@@ -606,6 +616,7 @@ def recommend():
             continue
         tag_ids = {tag.id for tag in book.tags}
         interest_score = len(tag_ids & interest_ids) * 3
+        favorite_tag_score = len(tag_ids & favorite_tag_ids) * 2
         behavior_score = 0
         if book.id in interacted_ids:
             behavior_score += 1
@@ -627,7 +638,11 @@ def recommend():
         )
         hot_score = favorite_count + like_count + comment_like_count
         scored.append(
-            (interest_score * 0.7 + hot_score * 0.3 + behavior_score, book.id, book)
+            (
+                interest_score + favorite_tag_score + hot_score * 0.3 + behavior_score,
+                book.id,
+                book,
+            )
         )
     scored.sort(key=lambda item: (-item[0], item[1]))
     books = [item[2] for item in scored]
