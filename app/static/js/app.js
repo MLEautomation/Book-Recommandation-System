@@ -103,15 +103,24 @@ window.addEventListener("pagehide", saveCurrentPageState);
 async function nav() {
   try {
     const d = await api("/session");
+    const navBar = document.querySelector("nav");
+    const logoutButton = document.querySelector("#logoutBtn");
+    const existingAdminLink = document.querySelector("#adminLink");
     if (d.user) {
       loginLink.hidden = true;
       registerLink.hidden = true;
       profileLink.hidden = false;
       favoritesLink.hidden = false;
       myCommentsLink.hidden = false;
-      logoutBtn.hidden = false;
-      if (d.user.role === 1) adminLink.hidden = false;
-      logoutBtn.onclick = async () => {
+      logoutButton.hidden = false;
+      if (d.user.role === 1 && !existingAdminLink) {
+        const adminLink = document.createElement("a");
+        adminLink.href = "/admin";
+        adminLink.id = "adminLink";
+        adminLink.textContent = "管理";
+        navBar.insertBefore(adminLink, logoutButton);
+      }
+      logoutButton.onclick = async () => {
         await api("/auth/logout", { method: "POST" });
         location = "/";
       };
@@ -121,8 +130,8 @@ async function nav() {
       profileLink.hidden = true;
       favoritesLink.hidden = true;
       myCommentsLink.hidden = true;
-      adminLink.hidden = true;
-      logoutBtn.hidden = true;
+      existingAdminLink?.remove();
+      logoutButton.hidden = true;
     }
   } catch (e) {}
 }
@@ -458,17 +467,61 @@ async function profilePage() {
   }
 }
 async function adminPage() {
-  try {
-    const d = await api("/admin/users");
-    document.querySelector("#admin").innerHTML = d.items
-      .map(
-        (u) =>
-          `<div class="list-row">${esc(u.username)} · ${esc(u.email)} · ${u.status}</div>`,
-      )
-      .join("");
-  } catch (e) {
-    toast(e.message);
+  const target = document.querySelector("#admin");
+  async function loadUsers() {
+    try {
+      const d = await api("/admin/users");
+      target.innerHTML = d.items
+        .map(
+          (user) =>
+            `<div class="list-row"><span>${esc(user.username)} · ${esc(user.email)} · ${esc(user.status)}</span>${user.role === 1 ? "" : `<button class="btn btn-outline btn-xs" data-admin-user="${user.id}" data-admin-action="${user.status === "banned" ? "unban" : "ban"}">${user.status === "banned" ? "解封" : "封禁"}</button>`}</div>`,
+        )
+        .join("");
+      target.querySelectorAll("[data-admin-user]").forEach((button) => {
+        button.onclick = async () => {
+          const action = button.dataset.adminAction;
+          const message = action === "ban" ? "确定封禁该用户吗？" : "确定解封该用户吗？";
+          if (!window.confirm(message)) return;
+          try {
+            await api(`/admin/users/${button.dataset.adminUser}/${action}`, {
+              method: "POST",
+            });
+            await loadUsers();
+          } catch (error) {
+            toast(error.message);
+          }
+        };
+      });
+    } catch (error) {
+      toast(error.message);
+    }
   }
+  async function loadComments() {
+    try {
+      const d = await api("/admin/comments");
+      target.innerHTML =
+        d.items
+          .map(
+            (comment) =>
+              `<div class="list-row"><span>${esc(comment.username)}：${esc(comment.content)}</span><button class="btn btn-danger btn-xs" data-admin-comment="${comment.id}">删除</button></div>`,
+          )
+          .join("") || '<div class="empty">暂无评论</div>';
+      target.querySelectorAll("[data-admin-comment]").forEach((button) => {
+        button.onclick = async () => {
+          if (!window.confirm("删除评论及其回复吗？")) return;
+          await api(`/admin/comments/${button.dataset.adminComment}`, {
+            method: "DELETE",
+          });
+          await loadComments();
+        };
+      });
+    } catch (error) {
+      toast(error.message);
+    }
+  }
+  document.querySelector("#usersTab").onclick = loadUsers;
+  document.querySelector("#commentsTab").onclick = loadComments;
+  await loadUsers();
 }
 async function importPage() {
   document.querySelector("#importForm").onsubmit = async (e) => {

@@ -17,7 +17,7 @@ from flask import (
     session,
     url_for,
 )
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from werkzeug.security import check_password_hash, generate_password_hash
 from .extensions import db
 from .models import (
@@ -72,6 +72,12 @@ def page(page):
         abort(404)
     if page not in allowed:
         abort(404)
+    if page in {"admin", "import"}:
+        user = current_user()
+        if not user:
+            return redirect(url_for("pages.page", page="login"))
+        if user.role != 1:
+            abort(403)
     return render_template(allowed[page])
 
 
@@ -515,15 +521,33 @@ def ranking():
     typ = request.args.get("type", "hot")
     page = max(request.args.get("page", 1, type=int), 1)
     books = db.session.query(Book).order_by(Book.id).all()
+    favorite_counts = dict(
+        db.session.query(Favorite.book_id, func.count(Favorite.id))
+        .group_by(Favorite.book_id)
+        .all()
+    )
+    comment_counts = dict(
+        db.session.query(Comment.book_id, func.count(Comment.id))
+        .group_by(Comment.book_id)
+        .all()
+    )
+    attitude_counts = {
+        (book_id, attitude_type): count
+        for book_id, attitude_type, count in db.session.query(
+            BookAttitude.book_id,
+            BookAttitude.attitude_type,
+            func.count(BookAttitude.id),
+        )
+        .filter(BookAttitude.status == 1)
+        .group_by(BookAttitude.book_id, BookAttitude.attitude_type)
+        .all()
+    }
     rows = []
     for b in books:
-        fav = db.session.query(Favorite).filter_by(book_id=b.id).count()
-        cs = db.session.query(Comment).filter_by(book_id=b.id).count()
-        book_ats = (
-            db.session.query(BookAttitude).filter_by(book_id=b.id, status=1).all()
-        )
-        likes = sum(x.attitude_type == 1 for x in book_ats)
-        dislikes = sum(x.attitude_type == 2 for x in book_ats)
+        fav = favorite_counts.get(b.id, 0)
+        cs = comment_counts.get(b.id, 0)
+        likes = attitude_counts.get((b.id, 1), 0)
+        dislikes = attitude_counts.get((b.id, 2), 0)
         metric = {
             "hot": fav + likes,
             "favorite": fav,
@@ -663,6 +687,27 @@ def recommend():
     interacted_ids = {
         x.book_id for x in db.session.query(Comment).filter_by(user_id=u.id).all()
     }
+    favorite_counts = dict(
+        db.session.query(Favorite.book_id, func.count(Favorite.id))
+        .group_by(Favorite.book_id)
+        .all()
+    )
+    like_counts = dict(
+        db.session.query(BookAttitude.book_id, func.count(BookAttitude.id))
+        .filter(BookAttitude.attitude_type == 1, BookAttitude.status == 1)
+        .group_by(BookAttitude.book_id)
+        .all()
+    )
+    comment_like_counts = dict(
+        db.session.query(Comment.book_id, func.count(CommentAttitude.id))
+        .join(CommentAttitude, CommentAttitude.comment_id == Comment.id)
+        .filter(
+            CommentAttitude.attitude_type == 1,
+            CommentAttitude.status == 1,
+        )
+        .group_by(Comment.book_id)
+        .all()
+    )
     scored = []
     for book in db.session.query(Book).all():
         if book.id in favorite_ids:
@@ -678,22 +723,9 @@ def recommend():
         behavior_score = 0
         if book.id in interacted_ids:
             behavior_score += 1
-        favorite_count = db.session.query(Favorite).filter_by(book_id=book.id).count()
-        like_count = (
-            db.session.query(BookAttitude)
-            .filter_by(book_id=book.id, attitude_type=1, status=1)
-            .count()
-        )
-        comment_like_count = (
-            db.session.query(CommentAttitude)
-            .join(Comment, Comment.id == CommentAttitude.comment_id)
-            .filter(
-                Comment.book_id == book.id,
-                CommentAttitude.attitude_type == 1,
-                CommentAttitude.status == 1,
-            )
-            .count()
-        )
+        favorite_count = favorite_counts.get(book.id, 0)
+        like_count = like_counts.get(book.id, 0)
+        comment_like_count = comment_like_counts.get(book.id, 0)
         hot_score = favorite_count + like_count + comment_like_count
         scored.append(
             (
